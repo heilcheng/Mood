@@ -217,8 +217,7 @@ export function DailyRecordModal() {
       .finally(() => setLoadingInsights(false))
   }, [tab, narrative, userId])
 
-  if (!dailyRecordOpen) return null
-
+  // ── HOOKS MUST ALL BE ABOVE THE EARLY RETURN ─────────────────────────────
   // Compute effective analysis: API data if available, else derived from localEntries
   const effectiveAnalysis = useMemo<EmotionAnalysis | null>(() => {
     if (analysis && analysis.totalEntries > 0) return analysis
@@ -226,9 +225,9 @@ export function DailyRecordModal() {
     const counts: Record<string, number> = {}
     for (const e of localEntries) { counts[e.mood] = (counts[e.mood] ?? 0) + 1 }
     const dominant = (Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null) as Mood | null
-    const today = new Date()
+    const todayDate = new Date()
     const recentMoods: (Mood | null)[] = Array(30).fill(null).map((_, i) => {
-      const d = new Date(today); d.setDate(today.getDate() - (29 - i))
+      const d = new Date(todayDate); d.setDate(todayDate.getDate() - (29 - i))
       const key = d.toISOString().slice(0, 10)
       return localEntries.find(e => e.createdAt.startsWith(key))?.mood as Mood | null ?? null
     })
@@ -240,6 +239,8 @@ export function DailyRecordModal() {
       tags: [],
     } as EmotionAnalysis
   }, [analysis, localEntries])
+
+  if (!dailyRecordOpen) return null
 
   const recentMoods: (Mood | null)[] = effectiveAnalysis?.recentMoods ?? Array(30).fill(null)
   const today = new Date()
@@ -273,8 +274,8 @@ export function DailyRecordModal() {
             key={t}
             onClick={() => setTab(t)}
             className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all capitalize ${tab === t
-                ? 'bg-white/25 text-white border border-white/40'
-                : 'bg-white/8 text-white/50 hover:bg-white/15'
+              ? 'bg-white/25 text-white border border-white/40'
+              : 'bg-white/8 text-white/50 hover:bg-white/15'
               }`}
           >
             {t === 'record' ? '📅 Daily Record' : '✨ AI Insights'}

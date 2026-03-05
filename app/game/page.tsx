@@ -1,12 +1,16 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
 import { GameCanvas } from '@/components/game/GameCanvas'
 import { HUD } from '@/components/game/HUD'
 import { JournalModal } from '@/components/game/JournalModal'
 import { BreathingOverlay } from '@/components/game/BreathingOverlay'
 import { WeeklyInsightModal } from '@/components/game/WeeklyInsightModal'
+import { DailyRecordModal } from '@/components/game/DailyRecordModal'
+import { TutorialOverlay } from '@/components/game/TutorialOverlay'
+import { AvatarPickerOverlay } from '@/components/game/AvatarPickerOverlay'
+import { DialogOverlay } from '@/components/game/DialogOverlay'
+import { SettingsModal } from '@/components/menu/SettingsModal'
 import { createClient, isSupabaseConfigured } from '@/lib/supabase'
 import { useGameStore } from '@/lib/gameStore'
 import { GardenSystem } from '@/game/systems/GardenSystem'
@@ -25,7 +29,6 @@ function buildDefaultQuests(userId: string) {
 }
 
 export default function GamePage() {
-  const router = useRouter()
   const [loading, setLoading] = useState(true)
   const {
     setUserId,
@@ -36,6 +39,8 @@ export default function GamePage() {
     setUnlockedItems,
     setEntryCount,
     setAvatar,
+    settingsOpen,
+    closeSettings,
   } = useGameStore()
 
   useEffect(() => {
@@ -112,7 +117,7 @@ export default function GamePage() {
     }
 
     init()
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   if (loading) {
@@ -133,19 +138,18 @@ export default function GamePage() {
         <div className="pointer-events-auto">
           <HUD />
         </div>
+        {/* Overlays */}
+        <JournalModal />
+        <BreathingOverlay />
+        <WeeklyInsightModal />
+        <DailyRecordModal />
+        <SettingsModal isOpen={settingsOpen} onClose={closeSettings} />
+        <DialogOverlay />
+
+        {/* Avatar picker is shown first; tutorial appears after */}
+        <AvatarPickerOverlay />
+        <TutorialOverlay />
       </div>
-
-      <JournalModal />
-      <BreathingOverlay />
-      <WeeklyInsightModal />
-
-      <button
-        onClick={() => router.push('/')}
-        className="absolute top-4 left-1/2 -translate-x-1/2 z-10
-          text-xs text-white/40 hover:text-white/70 transition-colors"
-      >
-        Menu
-      </button>
     </div>
   )
 }

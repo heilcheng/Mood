@@ -1,0 +1,54 @@
+{
+  "tileSize": 16,
+  "tilesets": {
+    "terrain":   { "path": "/assets/CozyValley/Tilesets/Terrain.png",     "cols": 16, "rows": 10 },
+    "soil":      { "path": "/assets/CozyValley/Tilesets/Soil.png",        "cols": 8,  "rows": 3  },
+    "water":     { "path": "/assets/CozyValley/Tilesets/Water.png",       "cols": 4,  "rows": 5  },
+    "barn":      { "path": "/assets/CozyValley/Tilesets/Barn.png",        "frameW": 96, "frameH": 64 },
+    "fence":     { "path": "/assets/CozyValley/Tilesets/Woodenfence.png", "cols": 7,  "rows": 3  }
+  },
+  "trees": {
+    "oak":    { "path": "/assets/CozyValley/Tilesets/Trees/Trees_oak.png",          "frameW": 32, "frameH": 32 },
+    "cherry": { "path": "/assets/CozyValley/Tilesets/Trees/Trees_cherryblossom.png","frameW": 32, "frameH": 32 }
+  },
+  "crops": {
+    "carrot":   { "path": "/assets/CozyValley/Tilesets/Crops/Crops_carrot.png",   "cols": 5, "rows": 2 },
+    "potato":   { "path": "/assets/CozyValley/Tilesets/Crops/Crops_potato.png",   "cols": 5, "rows": 2 },
+    "parsnip":  { "path": "/assets/CozyValley/Tilesets/Crops/Crops_parsnip.png",  "cols": 5, "rows": 2 },
+    "pumpkin":  { "path": "/assets/CozyValley/Tilesets/Crops/Crops_pumpkin.png",  "cols": 5, "rows": 2 },
+    "sunflower":{ "path": "/assets/CozyValley/Tilesets/Crops/Crops_sunflower.png","cols": 5, "rows": 3 }
+  },
+  "animals": {
+    "cow":     { "path": "/assets/CozyValley/Animals/Cow/Cow_brownwhite.png",    "frameW": 32, "frameH": 32, "cols": 4, "rows": 5 },
+    "chicken": { "path": "/assets/CozyValley/Animals/Chicken/Chicken_white.png", "frameW": 16, "frameH": 16, "cols": 2, "rows": 5 },
+    "sheep":   { "path": "/assets/CozyValley/Animals/Sheep/Sheep_white.png",     "frameW": 32, "frameH": 32, "cols": 4, "rows": 4 }
+  },
+  "characters": {
+    "frameW": 16, "frameH": 32, "cols": 10, "rows": 18,
+    "note": "Each row is one animation frame. Each col is a tool variant (col 0 = bare). Walk down rows 0-2, walk up 3-5, walk left 6-8, walk right 9-11, idle row 12.",
+    "bases": [
+      { "id": "base1", "path": "/assets/CozyValley/Characters/Base/Base1_body.png" },
+      { "id": "base2", "path": "/assets/CozyValley/Characters/Base/Base2_body.png" }
+    ],
+    "handsFront": [
+      { "id": "base1_front", "path": "/assets/CozyValley/Characters/Base/Base1_hand_front.png" },
+      { "id": "base2_front", "path": "/assets/CozyValley/Characters/Base/Base2_hand_front.png" }
+    ],
+    "handsBack": [
+      { "id": "base1_back", "path": "/assets/CozyValley/Characters/Base/Base1_hand_back.png" },
+      { "id": "base2_back", "path": "/assets/CozyValley/Characters/Base/Base2_hand_back.png" }
+    ],
+    "hairstyles": [
+      { "id": "hair1", "path": "/assets/CozyValley/Characters/Hairstyles/Hairstyles_short_1.png" },
+      { "id": "hair3", "path": "/assets/CozyValley/Characters/Hairstyles/Hairstyles_short_3.png" }
+    ],
+    "tops": [
+      { "id": "shirt1", "path": "/assets/CozyValley/Characters/Tops/Tops_shirt_1.png" },
+      { "id": "shirt3", "path": "/assets/CozyValley/Characters/Tops/Tops_shirt_3.png" }
+    ],
+    "bottoms": [
+      { "id": "shorts1", "path": "/assets/CozyValley/Characters/Bottoms/Bottoms_shorts_1.png" },
+      { "id": "shorts2", "path": "/assets/CozyValley/Characters/Bottoms/Bottoms_shorts_2.png" }
+    ]
+  }
+}

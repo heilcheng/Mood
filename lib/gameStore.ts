@@ -17,9 +17,13 @@ interface GameStore {
   entryCount: number
 
   // UI state
+  hasSeenTutorial: boolean
+  hasPickedAvatar: boolean
   journalOpen: boolean
   breathingOpen: boolean
   weeklyInsightOpen: boolean
+  dailyRecordOpen: boolean
+  settingsOpen: boolean
   weeklyEntries: JournalEntry[] | null
   nearbyInteractable: string | null
   lastAnalysis: {
@@ -29,6 +33,10 @@ interface GameStore {
     tags: string[]
   } | null
   questNotification: string | null
+  userSettings: {
+    displayName: string | null
+    journalPromptStyle: 'gentle' | 'exploratory' | 'creative'
+  }
 
   // Actions
   setUserId: (id: string | null) => void
@@ -51,9 +59,16 @@ interface GameStore {
   closeBreathing: () => void
   openWeeklyInsight: (entries: JournalEntry[]) => void
   closeWeeklyInsight: () => void
+  openDailyRecord: () => void
+  closeDailyRecord: () => void
+  openSettings: () => void
+  closeSettings: () => void
+  updateUserSettings: (settings: Partial<GameStore['userSettings']>) => void
   setNearbyInteractable: (id: string | null) => void
   setLastAnalysis: (analysis: GameStore['lastAnalysis']) => void
   setQuestNotification: (msg: string | null) => void
+  setHasSeenTutorial: (seen: boolean) => void
+  setHasPickedAvatar: (picked: boolean) => void
 }
 
 export const useGameStore = create<GameStore>((set) => ({
@@ -67,14 +82,24 @@ export const useGameStore = create<GameStore>((set) => ({
   quests: [],
   unlockedItems: [],
   entryCount: 0,
+  hasSeenTutorial: false,
+  hasPickedAvatar: false,
   journalOpen: false,
   breathingOpen: false,
   weeklyInsightOpen: false,
+  dailyRecordOpen: false,
+  settingsOpen: false,
   weeklyEntries: null,
   nearbyInteractable: null,
   lastAnalysis: null,
   questNotification: null,
+  userSettings: {
+    displayName: null,
+    journalPromptStyle: 'gentle',
+  },
 
+  setHasSeenTutorial: (seen) => set({ hasSeenTutorial: seen }),
+  setHasPickedAvatar: (picked) => set({ hasPickedAvatar: picked }),
   setUserId: (id) => set({ userId: id }),
   setAvatar: (avatar) => set({ avatar }),
   setDisplayName: (name) => set({ displayName: name }),
@@ -100,6 +125,12 @@ export const useGameStore = create<GameStore>((set) => ({
   closeBreathing: () => set({ breathingOpen: false }),
   openWeeklyInsight: (entries) => set({ weeklyInsightOpen: true, weeklyEntries: entries }),
   closeWeeklyInsight: () => set({ weeklyInsightOpen: false, weeklyEntries: null }),
+  openDailyRecord: () => set({ dailyRecordOpen: true }),
+  closeDailyRecord: () => set({ dailyRecordOpen: false }),
+  openSettings: () => set({ settingsOpen: true }),
+  closeSettings: () => set({ settingsOpen: false }),
+  updateUserSettings: (settings) =>
+    set((s) => ({ userSettings: { ...s.userSettings, ...settings } })),
   setNearbyInteractable: (id) => set({ nearbyInteractable: id }),
   setLastAnalysis: (analysis) => set({ lastAnalysis: analysis }),
   setQuestNotification: (msg) => set({ questNotification: msg }),

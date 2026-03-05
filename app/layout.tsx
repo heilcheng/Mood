@@ -9,7 +9,7 @@ const nunito = Nunito({
 })
 
 export const metadata: Metadata = {
-  title: 'Mindful Farm',
+  title: 'Mood. 🐄',
   description: 'Grow your garden, one reflection at a time.',
 }
 

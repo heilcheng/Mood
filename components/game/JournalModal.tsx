@@ -6,7 +6,7 @@ import { GlassButton } from '@/components/ui/GlassButton'
 import { useGameStore } from '@/lib/gameStore'
 import { EventBridge } from '@/game/EventBridge'
 import type { AnalyzeResult } from '@/lib/types'
-import { MOOD_EMOJI, MOOD_TO_PLANT } from '@/lib/types'
+import { MOOD_EMOJI, MOOD_TO_PLANT, QUESTS } from '@/lib/types'
 
 const GENTLE_PROMPTS = [
   "What is one thing that stood out to you today?",
@@ -31,12 +31,13 @@ const CRISIS_RESOURCES = [
 ]
 
 export function JournalModal() {
-  const { journalOpen, closeJournal, userId, addPlant, incrementEntryCount, entryCount, plants, setLastMood, setLastAnalysis, setQuestNotification } = useGameStore()
+  const { journalOpen, closeJournal, openBreathing, userId, addPlant, incrementEntryCount, entryCount, plants, setLastMood, setLastAnalysis, setQuestNotification, quests } = useGameStore()
   const [text, setText] = useState('')
+  const [selectedMood, setSelectedMood] = useState<keyof typeof MOOD_EMOJI | null>(null)
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<AnalyzeResult | null>(null)
   const [showPrompts, setShowPrompts] = useState(false)
-  const [selectedPrompts, ] = useState(() =>
+  const [selectedPrompts,] = useState(() =>
     [...GENTLE_PROMPTS].sort(() => Math.random() - 0.5).slice(0, 3)
   )
 
@@ -44,19 +45,24 @@ export function JournalModal() {
     closeJournal()
     setResult(null)
     setText('')
+    setSelectedMood(null)
   }
 
   const handleSubmit = async () => {
-    if (!text.trim() || loading) return
+    if (!text.trim() || loading || !selectedMood) return
     setLoading(true)
 
     try {
       const res = await fetch('/api/analyze', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, userId }),
+        body: JSON.stringify({ text, userId, overrideMood: selectedMood }),
       })
       const data: AnalyzeResult = await res.json()
+      // If user manually chose crisis, or AI overrides, respect data.mood. Otherwise gently defer to selectedMood.
+      const finalMood = data.mood === 'crisis' ? 'crisis' : (selectedMood || data.mood)
+      data.mood = finalMood
+
       setResult(data)
       setLastMood(data.mood)
       setLastAnalysis(data)
@@ -120,18 +126,36 @@ export function JournalModal() {
       {!result ? (
         <div className="space-y-4">
           <p className="text-white/80 text-sm">
-            Share what is in your heart. Every feeling is welcome here.
+            How are you feeling right now? Pick the emotion that fits best.
           </p>
+
+          <div className="flex flex-wrap gap-2">
+            {(Object.entries(MOOD_EMOJI) as [keyof typeof MOOD_EMOJI, string][]).map(([m, emoji]) => {
+              if (m === 'crisis') return null
+              return (
+                <button
+                  key={m}
+                  onClick={() => setSelectedMood(m)}
+                  className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all w-[72px] h-[72px] border ${selectedMood === m
+                    ? 'bg-white/30 border-white shadow-xl scale-105'
+                    : 'bg-white/10 border-white/20 hover:bg-white/20'
+                    }`}
+                >
+                  <span className="text-2xl mb-1">{emoji}</span>
+                  <span className="text-[10px] text-white/90 capitalize font-medium">{m}</span>
+                </button>
+              )
+            })}
+          </div>
 
           <textarea
             value={text}
             onChange={(e) => setText(e.target.value)}
             placeholder="Today I felt... / I am noticing... / I am grateful for..."
-            className="w-full h-36 bg-white/10 border border-white/20 rounded-xl p-3
+            className="w-full h-32 bg-white/10 border border-white/20 rounded-xl p-3
               text-white placeholder-white/40 text-sm resize-none
               focus:outline-none focus:border-white/40 focus:bg-white/15
               font-sans"
-            autoFocus
           />
 
           {/* Gentle prompts */}
@@ -164,7 +188,7 @@ export function JournalModal() {
             </GlassButton>
             <GlassButton
               onClick={handleSubmit}
-              disabled={!text.trim() || loading}
+              disabled={!text.trim() || !selectedMood || loading}
               size="sm"
             >
               {loading ? 'Planting...' : 'Plant My Reflection'}
@@ -189,27 +213,53 @@ export function JournalModal() {
               <GlassButton variant="secondary" onClick={handleClose}>Close</GlassButton>
             </div>
           ) : (
-            <div className="space-y-4">
-              {/* Result card */}
-              <div className={`bg-gradient-to-br ${TONE_GRADIENTS[result.tone_color] || TONE_GRADIENTS.soft_blue} rounded-2xl p-4 border border-white/30`}>
-                <div className="flex items-center gap-3 mb-3">
-                  <span className="text-3xl">{MOOD_EMOJI[result.mood]}</span>
-                  <div>
-                    <p className="text-white font-bold capitalize">{result.mood}</p>
+            <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-2">
+              {/* Quest progress */}
+              {(() => {
+                const weeklyQ = quests.find((q) => q.quest_key === 'weekly_reflection')
+                const questDef = QUESTS.find((q) => q.key === 'weekly_reflection')
+                if (!weeklyQ || !questDef || weeklyQ.status === 'completed') return null
+                const prog = Math.min(weeklyQ.progress, questDef.target)
+                return (
+                  <div className="bg-white/10 border border-white/20 rounded-xl px-4 py-2 text-center">
                     <p className="text-white/70 text-xs">
-                      {Math.round(result.confidence * 100)}% confidence
+                      Quest: Weekly Reflection — <span className="font-bold text-white">{prog} of {questDef.target}</span> complete
                     </p>
                   </div>
+                )
+              })()}
+
+              <div className="text-center space-y-2 mb-4">
+                <h3 className="text-2xl font-serif text-white tracking-wide">A Moment of Reflection</h3>
+                <p className="text-white/70 text-sm">Thank you for pausing and checking in with yourself.</p>
+              </div>
+
+              {/* Result card */}
+              <div className={`bg-gradient-to-br ${TONE_GRADIENTS[result.tone_color] || TONE_GRADIENTS.soft_blue} rounded-3xl p-8 border border-white/40 shadow-2xl relative overflow-hidden`}>
+                <div className="absolute top-0 right-0 w-48 h-48 bg-white/20 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
+
+                <div className="flex flex-col items-center gap-4 mb-6 relative z-10">
+                  <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center text-4xl shadow-inner border border-white/30 backdrop-blur-sm">
+                    {MOOD_EMOJI[result.mood]}
+                  </div>
+                  <div className="text-center">
+                    <p className="text-white font-serif text-2xl capitalize tracking-wide">{result.mood}</p>
+                  </div>
                 </div>
-                <p className="text-white/90 text-sm italic">{result.short_reflection_prompt}</p>
+
+                <div className="bg-black/15 rounded-2xl p-6 relative z-10 border border-white/20 shadow-inner">
+                  <p className="text-white text-lg leading-relaxed font-medium text-center italic">
+                    "{result.short_reflection_prompt}"
+                  </p>
+                </div>
               </div>
 
               {result.tags.length > 0 && (
-                <div className="flex flex-wrap gap-2">
+                <div className="flex flex-wrap gap-2 justify-center py-2">
                   {result.tags.map((tag) => (
                     <span
                       key={tag}
-                      className="text-xs bg-white/20 border border-white/25 rounded-full px-2.5 py-1 text-white/80"
+                      className="text-sm bg-white/20 border border-white/30 rounded-full px-4 py-1.5 text-white shadow-sm font-medium tracking-wide"
                     >
                       {tag}
                     </span>
@@ -217,12 +267,37 @@ export function JournalModal() {
                 </div>
               )}
 
-              <p className="text-white/70 text-xs">
-                A new {MOOD_TO_PLANT[result.mood] || 'plant'} has been planted in your garden.
-              </p>
+              <div className="bg-emerald-500/20 border border-emerald-400/40 rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-2 shadow-inner mt-4">
+                <div className="w-10 h-10 rounded-full bg-emerald-400/40 flex items-center justify-center text-2xl shadow-sm">
+                  🌱
+                </div>
+                <div>
+                  <p className="text-white font-semibold text-base mb-1">
+                    Your Garden Grows
+                  </p>
+                  <p className="text-emerald-50 text-sm">
+                    A beautiful <span className="font-bold text-white uppercase tracking-wider">{MOOD_TO_PLANT[result.mood] || 'seed'}</span> was planted in your garden to honor this moment.
+                  </p>
+                </div>
+              </div>
 
-              <GlassButton onClick={handleClose} className="w-full">
-                Return to Farm
+              {result.mood === 'stressed' && (
+                <div className="bg-purple-500/20 border border-purple-400/40 rounded-2xl p-4 flex flex-col gap-2">
+                  <p className="text-white/80 text-sm text-center">
+                    Feeling heavy? A breathing exercise might help 🌬️
+                  </p>
+                  <button
+                    onClick={() => { handleClose(); openBreathing() }}
+                    className="w-full py-2 rounded-xl text-white text-sm font-semibold
+                      bg-purple-500/40 border border-purple-400/50 hover:bg-purple-500/60 transition-all"
+                  >
+                    Try a Breathing Exercise
+                  </button>
+                </div>
+              )}
+
+              <GlassButton onClick={handleClose} className="w-full mt-4 font-bold text-lg py-3">
+                Return to the Farm
               </GlassButton>
             </div>
           )}

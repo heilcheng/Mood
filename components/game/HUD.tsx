@@ -2,7 +2,7 @@
 
 import { useGameStore } from '@/lib/gameStore'
 import { GlassPanel } from '@/components/ui/GlassPanel'
-import { MOOD_EMOJI } from '@/lib/types'
+import { MOOD_EMOJI, QUESTS } from '@/lib/types'
 
 const INTERACTABLE_LABELS: Record<string, string> = {
   journal_house: 'Journal House — Press E to write',
@@ -30,16 +30,20 @@ export function HUD() {
     quests,
     weeklyInsightOpen,
     openWeeklyInsight,
+    openDailyRecord,
+    openSettings,
     entryCount,
   } = useGameStore()
 
   const activeQuests = quests.filter((q) => q.status === 'active').slice(0, 3)
   const showWeeklyButton = entryCount >= 7 && !weeklyInsightOpen
 
+  const questTargetMap = Object.fromEntries(QUESTS.map((q) => [q.key, q.target]))
+
   return (
     <>
-      {/* Top-left: mood + streak */}
-      <div className="absolute top-4 left-4 z-10">
+      {/* Top-left: mood + streak + action icons */}
+      <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
         <GlassPanel className="px-3 py-2 flex items-center gap-2">
           <span className="text-xl">
             {lastMood ? MOOD_EMOJI[lastMood] : '🌱'}
@@ -52,6 +56,37 @@ export function HUD() {
             </div>
           )}
         </GlassPanel>
+        <div className="flex gap-2">
+          <button
+            onClick={openDailyRecord}
+            title="Daily Record"
+            className="backdrop-blur-md bg-white/15 border border-white/25 text-white
+              w-9 h-9 rounded-xl text-base flex items-center justify-center
+              hover:bg-white/25 transition-all shadow-sm"
+          >
+            📅
+          </button>
+          {showWeeklyButton && (
+            <button
+              onClick={() => openWeeklyInsight([])}
+              title="Weekly Insight"
+              className="backdrop-blur-md bg-lavender-400/60 border border-lavender-300/50 text-white
+                w-9 h-9 rounded-xl text-base flex items-center justify-center
+                hover:bg-lavender-400/80 transition-all shadow-sm animate-pulse-soft"
+            >
+              📊
+            </button>
+          )}
+          <button
+            onClick={openSettings}
+            title="Settings"
+            className="backdrop-blur-md bg-white/15 border border-white/25 text-white
+              w-9 h-9 rounded-xl text-base flex items-center justify-center
+              hover:bg-white/25 transition-all shadow-sm"
+          >
+            ⚙️
+          </button>
+        </div>
       </div>
 
       {/* Top-right: weather + time */}
@@ -78,33 +113,34 @@ export function HUD() {
       {/* Bottom-right: quest tracker */}
       {activeQuests.length > 0 && (
         <div className="absolute bottom-4 right-4 z-10">
-          <GlassPanel className="p-3 min-w-48">
+          <GlassPanel className="p-3 min-w-52">
             <p className="text-xs font-bold text-white/80 mb-2 uppercase tracking-wide">Quests</p>
-            <div className="flex flex-col gap-1.5">
-              {activeQuests.map((q) => (
-                <div key={q.quest_key} className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full border border-white/50 bg-white/20 flex-shrink-0" />
-                  <span className="text-xs text-white/90 capitalize">
-                    {q.quest_key.replace(/_/g, ' ')}
-                  </span>
-                </div>
-              ))}
+            <div className="flex flex-col gap-2">
+              {activeQuests.map((q) => {
+                const target = questTargetMap[q.quest_key] ?? 1
+                const progress = Math.min(q.progress, target)
+                const pct = target > 0 ? (progress / target) * 100 : 0
+                return (
+                  <div key={q.quest_key} className="space-y-1">
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-xs text-white/90 capitalize">
+                        {q.quest_key.replace(/_/g, ' ')}
+                      </span>
+                      <span className="text-xs text-white/50 tabular-nums flex-shrink-0">
+                        {progress} / {target}
+                      </span>
+                    </div>
+                    <div className="w-full h-1 bg-white/15 rounded-full overflow-hidden">
+                      <div
+                        className="h-full bg-emerald-400/70 rounded-full transition-all"
+                        style={{ width: `${pct}%` }}
+                      />
+                    </div>
+                  </div>
+                )
+              })}
             </div>
           </GlassPanel>
-        </div>
-      )}
-
-      {/* Weekly insight button */}
-      {showWeeklyButton && (
-        <div className="absolute bottom-4 left-4 z-10">
-          <button
-            onClick={() => openWeeklyInsight([])}
-            className="backdrop-blur-md bg-lavender-400/60 border border-lavender-300/50 text-white
-              px-4 py-2 rounded-xl text-sm font-semibold shadow-lg hover:bg-lavender-400/80 transition-all
-              animate-pulse-soft"
-          >
-            Weekly Insight
-          </button>
         </div>
       )}
 

@@ -19,7 +19,7 @@ export async function createPhaserGame(
     parent,
     width: parent.clientWidth || 800,
     height: parent.clientHeight || 600,
-    backgroundColor: '#7ec850',
+    backgroundColor: '#87CEEB',
     physics: {
       default: 'arcade',
       arcade: {
@@ -41,24 +41,8 @@ export async function createPhaserGame(
 
   const game = new Phaser.Game(config)
 
-  // Pass init data to FarmScene after boot
-  game.events.once('ready', () => {
-    const bootScene = game.scene.getScene('BootScene')
-    if (bootScene) {
-      // Data will be passed via scene start in BootScene → FarmScene
-      ;(game as unknown as Record<string, unknown>)._initData = initData
-    }
-  })
-
-  // Override BootScene create to pass data to FarmScene
-  game.events.on('step', () => {
-    const farmScene = game.scene.getScene('FarmScene')
-    const storedData = (game as unknown as Record<string, unknown>)._initData as GameInitData | undefined
-    if (farmScene && storedData && !(game as unknown as Record<string, unknown>)._dataInjected) {
-      ;(game as unknown as Record<string, unknown>)._dataInjected = true
-      // FarmScene will pick up data from init() on next scene start
-    }
-  })
+  // Store initData on game object before BootScene.create() runs — BootScene forwards it to FarmScene
+  ;(game as unknown as Record<string, unknown>)._initData = initData
 
   const destroy = () => {
     game.destroy(true)

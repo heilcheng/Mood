@@ -1,5 +1,5 @@
-import { MainMenu } from '@/components/menu/MainMenu'
+import { redirect } from 'next/navigation'
 
 export default function Home() {
-  return <MainMenu />
+  redirect('/game')
 }

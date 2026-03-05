@@ -1,6 +1,10 @@
 # Mindful Farm
 
-A cozy mindfulness farming game where you grow a pixel-art garden by writing reflective journal entries. AI classifies your emotions and maps them to plants.
+Mindful Farm is a cozy browser game about emotional self-care. You tend a small farm that grows and changes based on how you feel. At the center of the experience is a simple idea: writing honestly about your day should feel like planting something, not filing a report.
+
+The world is built with real CozyValley pixel art — a barn, cherry blossom trees, roaming animals, layered character sprites, and terrain tiles that give the farm a warm, handcrafted feel.
+
+---
 
 ## Quick Start
 

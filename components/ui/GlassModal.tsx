@@ -35,7 +35,7 @@ export function GlassModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center p-4 pointer-events-auto"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
       {/* Backdrop */}

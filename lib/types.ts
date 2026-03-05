@@ -102,7 +102,17 @@ export const QUESTS = [
   { key: 'water_garden', title: 'Water the Garden', description: 'Visit the garden 3 days in a row', target: 3 },
   { key: 'calm_minute', title: 'A Calm Minute', description: 'Complete a breathing exercise', target: 1 },
   { key: 'weekly_reflection', title: 'Weekly Reflection', description: 'Write 7 journal entries', target: 7 },
+  { key: 'breath_and_reflect', title: 'Breathe & Reflect', description: 'Complete a breathing exercise AND journal in the same day', target: 1 },
+  { key: 'full_week', title: 'Full Week Tending', description: 'Reflect every day for 7 days in a row', target: 7 },
 ] as const
+
+export interface EmotionAnalysis {
+  moodCounts: Partial<Record<Mood, number>>
+  totalEntries: number
+  tags: string[]
+  dominantMood: Mood | null
+  recentMoods: (Mood | null)[]
+}
 
 export const UNLOCK_MILESTONES: Record<number, string> = {
   3: 'butterflies',

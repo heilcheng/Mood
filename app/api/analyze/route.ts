@@ -59,13 +59,13 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { text, userId, savePlant, tileX, tileY, plantType, mood, confidence, tags, shortPrompt } = body
+    const { text, userId, savePlant, tileX, tileY, plantType, mood, confidence, tags, shortPrompt, overrideMood } = body
 
     if (!text) {
       return NextResponse.json({ error: 'text is required' }, { status: 400 })
     }
 
-    const result = await aiAnalyze(text)
+    const result = await aiAnalyze(text, overrideMood as string | undefined)
 
     // No DB configured — return analysis + a synthetic local plant so the game still works
     if (!isDbConfigured()) {

@@ -10,7 +10,7 @@ function isDbConfigured(): boolean {
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    let { entries, userId } = body
+    let { entries, userId, allEntries: fetchAll } = body
 
     // Fetch from DB only when configured and entries weren't passed in
     if (isDbConfigured() && userId && userId !== 'guest' && (!entries || entries.length === 0)) {
@@ -18,16 +18,20 @@ export async function POST(req: NextRequest) {
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!
       )
-      const weekAgo = new Date()
-      weekAgo.setDate(weekAgo.getDate() - 7)
 
-      const { data } = await supabase
+      let query = supabase
         .from('journal_entries')
         .select('*')
         .eq('user_id', userId)
-        .gte('created_at', weekAgo.toISOString())
         .order('created_at', { ascending: true })
 
+      if (!fetchAll) {
+        const weekAgo = new Date()
+        weekAgo.setDate(weekAgo.getDate() - 7)
+        query = query.gte('created_at', weekAgo.toISOString())
+      }
+
+      const { data } = await query
       entries = data || []
     }
 

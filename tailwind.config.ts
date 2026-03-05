@@ -83,6 +83,9 @@ const config: Config = {
         'breathe-out': 'breathe-out 4s ease-in-out',
         'fadeIn': 'fadeIn 0.3s ease-out',
         'slideUp': 'slideUp 0.4s ease-out',
+        'slideUpFade': 'slideUpFade 0.5s ease-out',
+        'floatUp': 'floatUp var(--dur, 3s) ease-in-out var(--delay, 0s) infinite',
+        'shimmer': 'shimmer 1.8s ease-in-out infinite',
       },
       keyframes: {
         float: {
@@ -108,6 +111,20 @@ const config: Config = {
         slideUp: {
           '0%': { opacity: '0', transform: 'translateY(20px)' },
           '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        slideUpFade: {
+          '0%': { opacity: '0', transform: 'translateY(16px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        },
+        floatUp: {
+          '0%': { opacity: '0', transform: 'translateY(0) scale(0.8)' },
+          '20%': { opacity: '0.9' },
+          '80%': { opacity: '0.6' },
+          '100%': { opacity: '0', transform: 'translateY(-60px) scale(1.1)' },
+        },
+        shimmer: {
+          '0%': { transform: 'translateX(-100%)' },
+          '100%': { transform: 'translateX(200%)' },
         },
       },
     },

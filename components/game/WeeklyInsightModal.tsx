@@ -8,7 +8,7 @@ import type { WeeklySummary } from '@/lib/types'
 import { MOOD_EMOJI } from '@/lib/types'
 
 export function WeeklyInsightModal() {
-  const { weeklyInsightOpen, closeWeeklyInsight, weeklyEntries, userId } = useGameStore()
+  const { weeklyInsightOpen, closeWeeklyInsight, weeklyEntries, userId, streak } = useGameStore()
   const [summary, setSummary] = useState<WeeklySummary | null>(null)
   const [loading, setLoading] = useState(false)
   const [revealed, setRevealed] = useState(false)
@@ -51,10 +51,26 @@ export function WeeklyInsightModal() {
           <p className="text-white/70 text-sm">Reflecting on your week...</p>
         </div>
       ) : summary ? (
-        <div className={`space-y-5 transition-all duration-700 ${revealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+        <div className={`space-y-6 transition-all duration-700 ${revealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+
+          {/* Streak & Mission Header */}
+          <div className="flex gap-4">
+            <div className="flex-1 bg-amber-500/20 border border-amber-400/40 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-inner">
+              <span className="text-3xl mb-1">🔥</span>
+              <p className="text-white font-bold text-xl">{streak} Day</p>
+              <p className="text-amber-100/80 text-xs font-semibold uppercase tracking-wider">Reflection Streak</p>
+            </div>
+            <div className="flex-1 bg-emerald-500/20 border border-emerald-400/40 rounded-2xl p-4 flex flex-col items-center justify-center text-center shadow-inner">
+              <span className="text-3xl mb-1">📝</span>
+              <p className="text-white font-bold text-xl">{weeklyEntries?.length || 0}</p>
+              <p className="text-emerald-100/80 text-xs font-semibold uppercase tracking-wider">Entries This Week</p>
+            </div>
+          </div>
+
           {/* Summary */}
-          <div className="bg-gradient-to-br from-lavender-400/30 to-sky-400/30 rounded-2xl p-4 border border-white/20">
-            <p className="text-white/90 text-sm leading-relaxed">{summary.summary}</p>
+          <div className="bg-gradient-to-br from-lavender-400/30 to-sky-400/30 rounded-2xl p-5 border border-white/30 shadow-lg relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-16 -mt-16 pointer-events-none" />
+            <p className="text-white text-base leading-relaxed font-medium relative z-10">"{summary.summary}"</p>
           </div>
 
           {/* Mood tags */}
@@ -96,17 +112,21 @@ export function WeeklyInsightModal() {
           </div>
 
           {/* Unlock badge (if applicable) */}
-          {(weeklyEntries?.length ?? 0) >= 7 && (
-            <div className="bg-cream-400/30 border border-cream-300/40 rounded-xl p-3 flex items-center gap-3">
-              <span className="text-2xl">🏮</span>
-              <div>
-                <p className="text-white font-semibold text-sm">New Unlock: Lantern Decor!</p>
-                <p className="text-white/70 text-xs">Your garden now glows with lanterns at night</p>
+          {((weeklyEntries?.length ?? 0) >= 7 || streak >= 7) && (
+            <div className="bg-gradient-to-r from-amber-500/30 to-orange-500/30 border border-amber-300/50 rounded-2xl p-4 flex items-center gap-4 shadow-xl relative overflow-hidden">
+              <div className="absolute inset-0 bg-white/5 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-white/20 via-transparent to-transparent pointer-events-none" />
+              <div className="w-12 h-12 bg-amber-400/30 rounded-full flex items-center justify-center text-3xl shadow-inner border border-amber-300/50 relative z-10 shrink-0">
+                🏮
+              </div>
+              <div className="relative z-10">
+                <p className="text-amber-50 font-bold text-base tracking-wide uppercase text-shadow">Mission Complete!</p>
+                <p className="text-white font-medium text-sm">Lantern Decor Unlocked</p>
+                <p className="text-white/70 text-xs mt-0.5">Your garden farm will now glow brightly at night!</p>
               </div>
             </div>
           )}
 
-          <GlassButton onClick={closeWeeklyInsight} className="w-full">
+          <GlassButton onClick={closeWeeklyInsight} className="w-full font-bold text-lg py-3 mt-4">
             Back to Farm
           </GlassButton>
         </div>

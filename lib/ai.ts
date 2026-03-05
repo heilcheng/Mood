@@ -33,7 +33,7 @@ const REFLECTION_PROMPTS: Record<Mood, string> = {
   crisis: "You are not alone. Please reach out to someone you trust or a crisis line.",
 }
 
-export function mockAnalyze(text: string): AnalyzeResult {
+export function mockAnalyze(text: string, overrideMood?: string): AnalyzeResult {
   if (detectCrisis(text)) return CRISIS_RESPONSE
 
   const lower = text.toLowerCase()
@@ -50,11 +50,18 @@ export function mockAnalyze(text: string): AnalyzeResult {
     }
   }
 
+  // Honour the user's explicit mood choice
+  if (overrideMood && overrideMood in REFLECTION_PROMPTS) {
+    bestMood = overrideMood as Mood
+    const found = MOOD_KEYWORDS.find(m => m.mood === bestMood)
+    if (found) bestColor = found.color
+  }
+
   const tags = extractTags(lower)
 
   return {
     mood: bestMood,
-    confidence: bestScore > 0 ? Math.min(0.6 + bestScore * 0.1, 0.95) : 0.5,
+    confidence: bestScore > 0 ? Math.min(0.6 + bestScore * 0.1, 0.95) : 0.75,
     tags,
     short_reflection_prompt: REFLECTION_PROMPTS[bestMood],
     tone_color: bestColor,
@@ -69,7 +76,7 @@ function extractTags(text: string): string[] {
   return tagWords.filter((t) => text.includes(t)).slice(0, 4)
 }
 
-export async function aiAnalyze(text: string): Promise<AnalyzeResult> {
+export async function aiAnalyze(text: string, overrideMood?: string): Promise<AnalyzeResult> {
   if (detectCrisis(text)) return CRISIS_RESPONSE
 
   const isMockMode =
@@ -77,7 +84,7 @@ export async function aiAnalyze(text: string): Promise<AnalyzeResult> {
     !process.env.GOOGLE_CLOUD_PROJECT_ID
 
   if (isMockMode) {
-    return mockAnalyze(text)
+    return mockAnalyze(text, overrideMood)
   }
 
   try {
@@ -104,7 +111,11 @@ Analyze the journal entry and return ONLY a JSON object with these exact fields:
 }
 Never diagnose. Be compassionate and non-clinical. Return only valid JSON.`
 
-    const prompt = `${systemPrompt}\n\nJournal entry: "${text}"`
+    const manualMoodInstruction = overrideMood
+      ? `The user explicitly stated they are feeling: "${overrideMood}". Please tailor the prompt and color strongly to this feeling, and set "mood" to "${overrideMood}".\n\n`
+      : ''
+
+    const prompt = `${systemPrompt}\n\n${manualMoodInstruction}Journal entry: "${text}"`
 
     const instance = helpers.toValue({ prompt })
     const parameters = helpers.toValue({ temperature: 0.3, maxOutputTokens: 256 })

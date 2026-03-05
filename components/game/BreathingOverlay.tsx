@@ -232,7 +232,7 @@ export function BreathingOverlay() {
   const phaseProgress = Math.min(1, Math.max(0, ((cycleTime % (isBox ? 16000 : 19000)) - currentPhaseStart) / phaseDur))
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center font-sans">
+    <div className="fixed inset-0 z-50 flex items-center justify-center font-sans pointer-events-auto">
       <Background />
 
       <div className="relative z-10 w-full max-w-xl mx-auto px-6 h-full flex flex-col justify-center">

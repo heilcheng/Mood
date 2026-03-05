@@ -105,20 +105,6 @@ export class FarmScene extends Phaser.Scene {
     this.weatherSystem = new WeatherSystem(this)
     this.dayNightSystem = new DayNightSystem(this)
 
-    // Background music — start muted, fade in after first user gesture
-    if (this.cache.audio.exists('farm_theme')) {
-      this.bgMusic = this.sound.add('farm_theme', { loop: true, volume: 0 })
-      this.bgMusic.play()
-      this.tweens.addCounter({
-        from: 0, to: 0.35, duration: 3000, ease: 'Sine.easeIn',
-        onUpdate: (tween) => {
-          if (this.bgMusic && 'setVolume' in this.bgMusic) {
-            (this.bgMusic as Phaser.Sound.WebAudioSound | Phaser.Sound.HTML5AudioSound).setVolume(tween.getValue() ?? 0)
-          }
-        },
-      })
-    }
-
     if (unlockedItems.includes('fireflies')) this.dayNightSystem.setHasFireflies(true)
     if (unlockedItems.includes('butterflies')) this.spawnButterflies()
 

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useGameStore } from '@/lib/gameStore'
 import { EventBridge } from '@/game/EventBridge'
 import { MOOD_TO_PLANT } from '@/lib/types'
+import { AudioManager } from '@/lib/audioManager'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
 type Activity = 'box_breathing' | 'body_scan' | 'five_senses'
@@ -218,6 +219,14 @@ export function BreathingOverlay() {
   const [feelingText, setFeelingText] = useState('')
   const [plantName, setPlantName] = useState<string | null>(null)
   const [submitting, setSubmitting] = useState(false)
+
+  useEffect(() => {
+    if (breathingOpen) {
+      AudioManager.startMeditationMusic()
+    } else {
+      AudioManager.stopMeditationMusic()
+    }
+  }, [breathingOpen])
 
   const resetAll = useCallback(() => {
     setStage('select'); setPhase('ready')

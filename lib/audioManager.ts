@@ -12,8 +12,9 @@ const SFX_FILES: Record<SfxType, string> = {
 
 class AudioManagerClass {
   private bgm: HTMLAudioElement | null = null
-  private ambient: HTMLAudioElement | null = null
   private sfxCache: Partial<Record<SfxType, HTMLAudioElement>> = {}
+  private meditation: HTMLAudioElement | null = null
+  private bgmPausedForMeditation = false
 
   private musicVol = 0.55   // 0–1
   private sfxVol   = 0.45   // 0–1, kept softer than music
@@ -22,12 +23,34 @@ class AudioManagerClass {
 
   setMusicVolume(pct: number) {
     this.musicVol = pct / 100
-    if (this.bgm)     this.bgm.volume     = this.musicVol
-    if (this.ambient) this.ambient.volume = Math.min(this.musicVol * 0.5, 0.35)
+    if (this.bgm)        this.bgm.volume        = this.musicVol
+    if (this.meditation) this.meditation.volume = this.musicVol
   }
 
   setSfxVolume(pct: number) {
     this.sfxVol = (pct / 100) * 0.6   // cap at 60% so SFX never blast over music
+  }
+
+  // ── Meditation music ─────────────────────────────────────────────────────────
+
+  startMeditationMusic() {
+    if (typeof window === 'undefined') return
+    if (this.bgm && !this.bgm.paused) { this.bgm.pause(); this.bgmPausedForMeditation = true }
+    if (this.meditation) { this.meditation.pause(); this.meditation = null }
+    const audio = new Audio('/audio/bgm_meditation.mp3')
+    audio.loop = true
+    audio.volume = this.musicVol
+    audio.play().catch(() => {})
+    this.meditation = audio
+  }
+
+  stopMeditationMusic() {
+    if (typeof window === 'undefined') return
+    if (this.meditation) { this.meditation.pause(); this.meditation = null }
+    if (this.bgmPausedForMeditation && this.bgm) {
+      this.bgm.play().catch(() => {})
+      this.bgmPausedForMeditation = false
+    }
   }
 
   // ── BGM ─────────────────────────────────────────────────────────────────────
@@ -50,20 +73,6 @@ class AudioManagerClass {
 
   private _stopBgm() {
     if (this.bgm) { this.bgm.pause(); this.bgm = null }
-  }
-
-  // ── Ambient layer ───────────────────────────────────────────────────────────
-
-  startAmbient(isNight: boolean) {
-    if (typeof window === 'undefined' || this.ambient) return
-    // Daytime: Nature Meditation loop. Night: reuse bgm_night softly as ambient pad.
-    const src = isNight ? '/audio/bgm_night.mp3' : '/audio/ambient_birds.mp3'
-
-    const audio = new Audio(src)
-    audio.loop   = true
-    audio.volume = Math.min(this.musicVol * 0.5, 0.35)
-    audio.play().catch(() => { /* file missing — silent */ })
-    this.ambient = audio
   }
 
   // ── SFX ─────────────────────────────────────────────────────────────────────
@@ -98,7 +107,6 @@ class AudioManagerClass {
     })
 
     this.startBgm(isNight)
-    this.startAmbient(isNight)
   }
 }
 

@@ -109,9 +109,6 @@ const CHAR_FRAME_H = 32
 
 export class CozyValleyLoader {
   static preloadAll(scene: Phaser.Scene): void {
-    // Background music
-    scene.load.audio('farm_theme', '/assets/music/farm_theme.mp3')
-
     // Ground tiles
     scene.load.spritesheet('terrain', '/assets/CozyValley/Tilesets/Terrain.png', { frameWidth: 16, frameHeight: 16 })
     scene.load.spritesheet('water_ss', '/assets/CozyValley/Tilesets/Water.png', { frameWidth: 16, frameHeight: 16 })

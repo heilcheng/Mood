@@ -48,10 +48,10 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   return (
     <GlassModal isOpen={isOpen} onClose={onClose} title="Settings">
-      <div className="space-y-5">
+      <div className="space-y-4 md:space-y-5 max-h-[70vh] md:max-h-none overflow-y-auto pr-1 md:pr-0 scrollbar-thin">
 
         {/* Profile section */}
-        <div className="space-y-3">
+        <div className="space-y-2 md:space-y-3">
           <p className="text-white/60 text-xs uppercase tracking-wide font-medium">Profile</p>
           <div className="flex items-center gap-3">
             <div className="w-12 h-12 rounded-full bg-white/15 border border-white/25 flex items-center justify-center text-2xl flex-shrink-0">
@@ -70,18 +70,17 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         </div>
 
         {/* Well-being section */}
-        <div className="border-t border-white/10 pt-4 space-y-3">
+        <div className="border-t border-white/10 pt-3 md:pt-4 space-y-2 md:space-y-3">
           <p className="text-white/60 text-xs uppercase tracking-wide font-medium">Well-being</p>
           <p className="text-white/50 text-xs">Journal prompt style</p>
           <div className="flex flex-col gap-2">
             {PROMPT_STYLES.map((style) => (
               <label
                 key={style.value}
-                className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border ${
-                  promptStyle === style.value
+                className={`flex items-center gap-3 p-3 rounded-xl cursor-pointer transition-all border ${promptStyle === style.value
                     ? 'bg-white/20 border-white/40'
                     : 'bg-white/8 border-white/15 hover:bg-white/15'
-                }`}
+                  }`}
               >
                 <input
                   type="radio"
@@ -101,7 +100,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         </div>
 
         {/* Audio section */}
-        <div className="border-t border-white/10 pt-4 space-y-4">
+        <div className="border-t border-white/10 pt-3 md:pt-4 space-y-3 md:space-y-4">
           <p className="text-white/60 text-xs uppercase tracking-wide font-medium">Audio</p>
           <GlassSlider
             value={userSettings.musicVolume ?? 70}
@@ -116,7 +115,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         </div>
 
         {/* Display section */}
-        <div className="border-t border-white/10 pt-4 space-y-3">
+        <div className="border-t border-white/10 pt-3 md:pt-4 space-y-2 md:space-y-3">
           <p className="text-white/60 text-xs uppercase tracking-wide font-medium">Display</p>
           <GlassToggle checked={pixelArt} onChange={setPixelArt} label="Pixel Art Mode" />
           <GlassToggle checked={showHints} onChange={setShowHints} label="Show Interaction Hints" />

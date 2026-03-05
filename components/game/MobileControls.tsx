@@ -35,34 +35,32 @@ export function MobileControls() {
         )
     }, [])
 
-    // ----- D-Pad Touch Handling -----
-    const handleTouchDpad = useCallback((e: TouchEvent) => {
+    // ----- D-Pad Pointer Handling -----
+    const handlePointerDpad = useCallback((e: PointerEvent) => {
         if (!dpadRef.current) return
-        e.preventDefault() // prevent scrolling
-        const rect = dpadRef.current.getBoundingClientRect()
+        e.preventDefault() // prevent scrolling/default actions
+        if (e.type === 'pointermove' && e.buttons !== 1) return // only track if mouse button is down
 
-        // Calculate which direction is primarily being pressed based on touch coordinates relative to dpad center
+        const rect = dpadRef.current.getBoundingClientRect()
+        // Calculate which direction is primarily being pressed based on pointer coordinates relative to dpad center
         const cx = rect.left + rect.width / 2
         const cy = rect.top + rect.height / 2
 
         const newActive = new Set<InputDirection>()
 
-        for (let i = 0; i < e.touches.length; i++) {
-            const t = e.touches[i]
-            // If touch is generally inside the D-pad area (generous bounds)
-            if (t.clientX > rect.left - 40 && t.clientX < rect.right + 40 &&
-                t.clientY > rect.top - 40 && t.clientY < rect.bottom + 40) {
-                const dx = t.clientX - cx
-                const dy = t.clientY - cy
+        // If pointer is generally inside the D-pad area (generous bounds)
+        if (e.clientX > rect.left - 40 && e.clientX < rect.right + 40 &&
+            e.clientY > rect.top - 40 && e.clientY < rect.bottom + 40) {
+            const dx = e.clientX - cx
+            const dy = e.clientY - cy
 
-                // Simple 4-way diagonal split
-                if (Math.abs(dx) > Math.abs(dy)) {
-                    if (dx > 20) newActive.add('right')
-                    if (dx < -20) newActive.add('left')
-                } else {
-                    if (dy > 20) newActive.add('down')
-                    if (dy < -20) newActive.add('up')
-                }
+            // Simple 4-way diagonal split
+            if (Math.abs(dx) > Math.abs(dy)) {
+                if (dx > 20) newActive.add('right')
+                if (dx < -20) newActive.add('left')
+            } else {
+                if (dy > 20) newActive.add('down')
+                if (dy < -20) newActive.add('up')
             }
         }
 
@@ -77,20 +75,16 @@ export function MobileControls() {
         activeDirs.current = newActive
     }, [dispatchKeyDir])
 
-    const handleTouchEndDpad = useCallback((e: TouchEvent) => {
+    const handlePointerEndDpad = useCallback((e: PointerEvent) => {
         e.preventDefault()
-        if (e.touches.length === 0) {
-            for (const d of activeDirs.current) {
-                dispatchKeyDir(d, false)
-            }
-            activeDirs.current.clear()
-        } else {
-            handleTouchDpad(e) // re-evaluate remaining touches
+        for (const d of activeDirs.current) {
+            dispatchKeyDir(d, false)
         }
-    }, [handleTouchDpad, dispatchKeyDir])
+        activeDirs.current.clear()
+    }, [dispatchKeyDir])
 
-    // ----- Interact Touch Handling -----
-    const handleTouchInteractStart = useCallback((e: TouchEvent) => {
+    // ----- Interact Pointer Handling -----
+    const handlePointerInteractStart = useCallback((e: PointerEvent) => {
         e.preventDefault()
         if (!interactHeld.current) {
             interactHeld.current = true
@@ -98,7 +92,7 @@ export function MobileControls() {
         }
     }, [dispatchInteract])
 
-    const handleTouchInteractEnd = useCallback((e: TouchEvent) => {
+    const handlePointerInteractEnd = useCallback((e: PointerEvent) => {
         e.preventDefault()
         if (interactHeld.current) {
             interactHeld.current = false
@@ -106,32 +100,34 @@ export function MobileControls() {
         }
     }, [dispatchInteract])
 
-    // Bind native touch events so we can use preventDefault (React synthetic events are passive by default on some browsers)
+    // Bind native pointer events so we can use preventDefault
     useEffect(() => {
         const dpad = dpadRef.current
         const interact = interactRef.current
         if (!dpad || !interact) return
 
-        dpad.addEventListener('touchstart', handleTouchDpad, { passive: false })
-        dpad.addEventListener('touchmove', handleTouchDpad, { passive: false })
-        dpad.addEventListener('touchend', handleTouchEndDpad, { passive: false })
-        dpad.addEventListener('touchcancel', handleTouchEndDpad, { passive: false })
+        dpad.addEventListener('pointerdown', handlePointerDpad, { passive: false })
+        dpad.addEventListener('pointermove', handlePointerDpad, { passive: false })
+        dpad.addEventListener('pointerup', handlePointerEndDpad, { passive: false })
+        dpad.addEventListener('pointercancel', handlePointerEndDpad, { passive: false })
 
-        interact.addEventListener('touchstart', handleTouchInteractStart, { passive: false })
-        interact.addEventListener('touchend', handleTouchInteractEnd, { passive: false })
-        interact.addEventListener('touchcancel', handleTouchInteractEnd, { passive: false })
+        interact.addEventListener('pointerdown', handlePointerInteractStart, { passive: false })
+        interact.addEventListener('pointerup', handlePointerInteractEnd, { passive: false })
+        interact.addEventListener('pointercancel', handlePointerInteractEnd, { passive: false })
+        interact.addEventListener('pointerout', handlePointerInteractEnd, { passive: false })
 
         return () => {
-            dpad.removeEventListener('touchstart', handleTouchDpad)
-            dpad.removeEventListener('touchmove', handleTouchDpad)
-            dpad.removeEventListener('touchend', handleTouchEndDpad)
-            dpad.removeEventListener('touchcancel', handleTouchEndDpad)
+            dpad.removeEventListener('pointerdown', handlePointerDpad)
+            dpad.removeEventListener('pointermove', handlePointerDpad)
+            dpad.removeEventListener('pointerup', handlePointerEndDpad)
+            dpad.removeEventListener('pointercancel', handlePointerEndDpad)
 
-            interact.removeEventListener('touchstart', handleTouchInteractStart)
-            interact.removeEventListener('touchend', handleTouchInteractEnd)
-            interact.removeEventListener('touchcancel', handleTouchInteractEnd)
+            interact.removeEventListener('pointerdown', handlePointerInteractStart)
+            interact.removeEventListener('pointerup', handlePointerInteractEnd)
+            interact.removeEventListener('pointercancel', handlePointerInteractEnd)
+            interact.removeEventListener('pointerout', handlePointerInteractEnd)
         }
-    }, [handleTouchDpad, handleTouchEndDpad, handleTouchInteractStart, handleTouchInteractEnd])
+    }, [handlePointerDpad, handlePointerEndDpad, handlePointerInteractStart, handlePointerInteractEnd])
 
     if (!isTouchDevice) return null
 

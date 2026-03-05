@@ -94,8 +94,8 @@ export class FarmScene extends Phaser.Scene {
 
     // Render Pink Cherry trees for each completed journal entry
     const journalCount = useGameStore.getState().entryCount || useGameStore.getState().localEntries.length
-    for (let i = 0; i < journalCount; i++) {
-      this.spawnCherryTreeReward(i, false)
+    if (journalCount > 0) {
+      this.spawnCherryTreeReward(0, false)
     }
 
     this.spawnDecorations(unlockedItems)
@@ -543,8 +543,11 @@ export class FarmScene extends Phaser.Scene {
     })
 
     const cleanJournalCompleted = EventBridge.on('journalCompleted', () => {
+      // Only spawn the first one live if they didn't have any before
       const count = useGameStore.getState().entryCount || useGameStore.getState().localEntries.length
-      this.spawnCherryTreeReward(Math.max(0, count - 1), true)
+      if (count === 1) {
+        this.spawnCherryTreeReward(0, true)
+      }
     })
 
     const cleanWeather = EventBridge.on('weatherChanged', (weather: WeatherState) => {

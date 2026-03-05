@@ -5,12 +5,12 @@ import { GlassPanel } from '@/components/ui/GlassPanel'
 import { MOOD_EMOJI } from '@/lib/types'
 
 const INTERACTABLE_LABELS: Record<string, string> = {
-  journal_house: 'Journal House — Press E to write',
-  pond: 'Peaceful Pond — Press E to breathe',
-  garden: 'Garden — Press E to plant',
-  npc_guide: 'Guide — Press E to talk',
-  npc_gardener: 'Gardener — Press E to talk',
-  npc_neighbor: 'Neighbor — Press E to talk',
+  journal_house: 'Journal House — write a reflection',
+  pond: 'Peaceful Pond — breathing exercise',
+  garden: 'Garden — plant something',
+  npc_guide: 'Guide — chat',
+  npc_gardener: 'Gardener — chat',
+  npc_neighbor: 'Neighbor — chat',
 }
 
 const WEATHER_EMOJI: Record<string, string> = {
@@ -40,57 +40,60 @@ export function HUD() {
     <>
       {/* Top-left: mood + streak */}
       <div className="absolute top-4 left-4 z-10">
-        <GlassPanel className="px-3 py-2 flex items-center gap-2">
+        <div className="bg-amber-50/90 border border-amber-200 rounded-2xl shadow-xl px-3 py-2 flex items-center gap-2">
           <span className="text-xl">
             {lastMood ? MOOD_EMOJI[lastMood] : '🌱'}
           </span>
           {streak > 0 && (
             <div className="flex items-center gap-1">
-              <span className="text-xs text-white/80">streak</span>
-              <span className="text-sm font-bold text-cream-200">{streak}</span>
+              <span className="text-sm text-amber-900/80">streak</span>
+              <span className="text-sm font-bold text-amber-900">{streak}</span>
               <span className="text-xs">🔥</span>
             </div>
           )}
-        </GlassPanel>
+        </div>
       </div>
 
       {/* Top-right: weather + time */}
       <div className="absolute top-4 right-4 z-10">
-        <GlassPanel className="px-3 py-2 flex items-center gap-2">
+        <div className="bg-amber-50/90 border border-amber-200 rounded-2xl shadow-xl px-3 py-2 flex items-center gap-2">
           <span className="text-xl">{WEATHER_EMOJI[weather] || '☀️'}</span>
-          <span className="text-xs text-white/80">
+          <span className="text-sm font-semibold text-amber-900">
             {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </span>
-        </GlassPanel>
+        </div>
       </div>
 
-      {/* Bottom-center: interaction hint */}
+      {/* Bottom-center: interaction hint — amber dialog box */}
       {nearbyInteractable && (
         <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-10 animate-fadeIn">
-          <GlassPanel className="px-4 py-2">
-            <p className="text-sm text-white font-medium text-center">
-              {INTERACTABLE_LABELS[nearbyInteractable] || 'Press E to interact'}
+          <div className="bg-amber-50/95 border-2 border-amber-300 rounded-2xl px-5 py-3 shadow-xl flex items-center gap-3">
+            <span className="bg-amber-400 text-white text-xs font-black px-2 py-1 rounded-lg border border-amber-500 shadow">
+              E
+            </span>
+            <p className="text-amber-900 font-bold text-base">
+              {INTERACTABLE_LABELS[nearbyInteractable] || 'Interact'}
             </p>
-          </GlassPanel>
+          </div>
         </div>
       )}
 
       {/* Bottom-right: quest tracker */}
       {activeQuests.length > 0 && (
         <div className="absolute bottom-4 right-4 z-10">
-          <GlassPanel className="p-3 min-w-48">
-            <p className="text-xs font-bold text-white/80 mb-2 uppercase tracking-wide">Quests</p>
+          <div className="bg-emerald-800/70 border border-emerald-600/60 rounded-2xl shadow-xl p-3 min-w-48">
+            <p className="text-sm font-bold text-emerald-100 mb-2 uppercase tracking-wide">Quests</p>
             <div className="flex flex-col gap-1.5">
               {activeQuests.map((q) => (
                 <div key={q.quest_key} className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full border border-white/50 bg-white/20 flex-shrink-0" />
-                  <span className="text-xs text-white/90 capitalize">
+                  <span className="text-xs flex-shrink-0">🌿</span>
+                  <span className="text-sm text-emerald-50 capitalize">
                     {q.quest_key.replace(/_/g, ' ')}
                   </span>
                 </div>
               ))}
             </div>
-          </GlassPanel>
+          </div>
         </div>
       )}
 
@@ -111,19 +114,19 @@ export function HUD() {
       {/* Quest notification toast */}
       {questNotification && (
         <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 animate-slideUp">
-          <GlassPanel className="px-5 py-3 bg-sage-400/40">
-            <p className="text-sm text-white font-medium text-center max-w-xs">
+          <div className="bg-emerald-700/90 border border-emerald-500/60 rounded-2xl shadow-xl px-5 py-3">
+            <p className="text-sm text-emerald-50 font-medium text-center max-w-xs">
               {questNotification}
             </p>
-          </GlassPanel>
+          </div>
         </div>
       )}
 
-      {/* J key hint (first time) */}
+      {/* Controls hint — bottom pill */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
-        <GlassPanel className="px-3 py-1">
-          <p className="text-xs text-white/60">J = Journal &nbsp;|&nbsp; WASD/Arrows = Move &nbsp;|&nbsp; E = Interact</p>
-        </GlassPanel>
+        <div className="bg-amber-50/80 border border-amber-200/60 rounded-full shadow px-4 py-1">
+          <p className="text-sm text-amber-900/80 font-medium">J = Journal &nbsp;|&nbsp; WASD/Arrows = Move &nbsp;|&nbsp; E = Interact</p>
+        </div>
       </div>
     </>
   )

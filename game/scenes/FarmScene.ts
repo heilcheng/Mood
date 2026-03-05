@@ -19,9 +19,11 @@ import {
 } from './BootScene'
 import type { Plant, WeatherState } from '@/lib/types'
 
-interface InteractionZone {
+interface InteractPoint {
   id: string
-  bounds: Phaser.Geom.Rectangle
+  getX: () => number
+  getY: () => number
+  radius: number
 }
 
 export class FarmScene extends Phaser.Scene {
@@ -40,7 +42,7 @@ export class FarmScene extends Phaser.Scene {
   private eKey!: Phaser.Input.Keyboard.Key
   private jKey!: Phaser.Input.Keyboard.Key
   private escKey!: Phaser.Input.Keyboard.Key
-  private interactionZones: InteractionZone[] = []
+  private interactPoints: InteractPoint[] = []
   private collisionTiles: Phaser.GameObjects.Rectangle[] = []
   private tileImages: Phaser.GameObjects.Image[] = []
   private butterflies: Phaser.GameObjects.Image[] = []
@@ -99,14 +101,17 @@ export class FarmScene extends Phaser.Scene {
     // NPCs
     this.createNPCs()
 
-    // Interaction zones
-    this.createInteractionZones()
+    // Interaction points (distance-based)
+    this.createInteractPoints()
 
     // Garden plants
     this.initialPlants.forEach((p) => this.spawnPlant(p))
 
     // Decorations
     this.spawnDecorations(unlockedItems)
+
+    // Ambient decorations (fish, birds, flowers)
+    this.spawnAmbientDecorations()
 
     // Systems
     this.weatherSystem = new WeatherSystem(this)
@@ -195,16 +200,15 @@ export class FarmScene extends Phaser.Scene {
         'tree_0'
       )
       tree.setDepth(3)
+      // Slow sway tween
       this.tweens.add({
         targets: tree,
-        texture: { key: 'tree_1' } as unknown as Phaser.Types.Tweens.TweenDataConfig,
-        duration: 1500,
+        duration: 2000 + Math.random() * 1000,
         yoyo: true,
         repeat: -1,
         ease: 'Sine.easeInOut',
-        onUpdate: () => {
-          if (Math.random() < 0.01) tree.setTexture('tree_1')
-          else if (Math.random() < 0.01) tree.setTexture('tree_0')
+        onRepeat: () => {
+          tree.setTexture(tree.texture.key === 'tree_0' ? 'tree_1' : 'tree_0')
         },
       })
     })
@@ -241,11 +245,11 @@ export class FarmScene extends Phaser.Scene {
       }
     }
 
-    // House collision box
+    // House collision box — upper half only so player can stand on doorstep
     const houseRect = this.add.rectangle(
       HOUSE_POSITION.x * TILE_SIZE + 24,
-      HOUSE_POSITION.y * TILE_SIZE + 32,
-      48, 32, 0, 0
+      HOUSE_POSITION.y * TILE_SIZE + 16,
+      48, 24, 0, 0
     )
     this.physics.add.existing(houseRect, true)
     this.physics.add.collider(this.player, houseRect)
@@ -258,21 +262,21 @@ export class FarmScene extends Phaser.Scene {
         x: NPC_POSITIONS.guide.x * TILE_SIZE + 8,
         y: NPC_POSITIONS.guide.y * TILE_SIZE + 16,
         textureKey: 'npc_guide',
-        message: "Welcome to your Mindful Farm! 🌱 Walk to the Journal House to plant reflections, or visit the pond for breathing exercises.",
+        message: "Welcome to your Mindful Farm! Walk to the Journal House to plant reflections, or visit the pond for breathing exercises.",
       },
       {
         id: 'gardener',
         x: NPC_POSITIONS.gardener.x * TILE_SIZE + 8,
         y: NPC_POSITIONS.gardener.y * TILE_SIZE + 16,
         textureKey: 'npc_gardener',
-        message: "Every feeling you write becomes a seed. Your garden grows with your heart! 🌻",
+        message: "Every feeling you write becomes a seed. Your garden grows with your heart!",
       },
       {
         id: 'neighbor',
         x: NPC_POSITIONS.neighbor.x * TILE_SIZE + 8,
         y: NPC_POSITIONS.neighbor.y * TILE_SIZE + 16,
         textureKey: 'npc_neighbor',
-        message: "I've been tending this land for years. The secret? Show up, even on cloudy days. 🌧️",
+        message: "I've been tending this land for years. The secret? Show up, even on cloudy days.",
       },
     ]
 
@@ -282,43 +286,52 @@ export class FarmScene extends Phaser.Scene {
     })
   }
 
-  private createInteractionZones(): void {
+  private createInteractPoints(): void {
     const houseDoorX = HOUSE_POSITION.x * TILE_SIZE + 24
-    const houseDoorY = HOUSE_POSITION.y * TILE_SIZE + 46
+    const houseDoorY = (HOUSE_POSITION.y + 3) * TILE_SIZE  // in front of door
 
-    this.interactionZones = [
-      {
-        id: 'journal_house',
-        bounds: new Phaser.Geom.Rectangle(houseDoorX - 24, houseDoorY - 16, 48, 24),
-      },
+    this.interactPoints = [
+      { id: 'journal_house', getX: () => houseDoorX, getY: () => houseDoorY, radius: 36 },
       {
         id: 'pond',
-        bounds: new Phaser.Geom.Rectangle(
-          POND_POSITION.x * TILE_SIZE - 8,
-          POND_POSITION.y * TILE_SIZE - 8,
-          80, 48
-        ),
+        getX: () => POND_POSITION.x * TILE_SIZE + 24,
+        getY: () => POND_POSITION.y * TILE_SIZE + 16,
+        radius: 48,
+      },
+      {
+        id: 'garden',
+        getX: () => (GARDEN_ORIGIN.x + 2) * TILE_SIZE,
+        getY: () => (GARDEN_ORIGIN.y + 2) * TILE_SIZE,
+        radius: 56,
       },
     ]
 
-    // NPC zones
+    // NPCs: live lambdas so point tracks NPC movement
     this.npcs.forEach((npc) => {
-      this.interactionZones.push({
+      this.interactPoints.push({
         id: `npc_${npc.npcId}`,
-        bounds: new Phaser.Geom.Rectangle(npc.x - 20, npc.y - 20, 40, 40),
+        getX: () => npc.x,
+        getY: () => npc.y,
+        radius: 32,
       })
     })
+  }
 
-    // Garden plot zone
-    this.interactionZones.push({
-      id: 'garden',
-      bounds: new Phaser.Geom.Rectangle(
-        GARDEN_ORIGIN.x * TILE_SIZE - 4,
-        GARDEN_ORIGIN.y * TILE_SIZE - 4,
-        5 * TILE_SIZE + 8,
-        5 * TILE_SIZE + 8
-      ),
-    })
+  /** Returns the nearest interact point within maxRadius, or null. */
+  private getNearestInteract(maxRadius: number): InteractPoint | null {
+    if (!this.player) return null
+    let best: InteractPoint | null = null
+    let bestDist = maxRadius
+    for (const pt of this.interactPoints) {
+      const dx = this.player.x - pt.getX()
+      const dy = this.player.y - pt.getY()
+      const dist = Math.sqrt(dx * dx + dy * dy)
+      if (dist < pt.radius && dist < bestDist) {
+        best = pt
+        bestDist = dist
+      }
+    }
+    return best
   }
 
   private spawnPlant(plant: Plant): void {
@@ -339,6 +352,84 @@ export class FarmScene extends Phaser.Scene {
       const lanternY = GARDEN_ORIGIN.y * TILE_SIZE
       const lantern = this.add.image(lanternX, lanternY, 'lantern')
       lantern.setDepth(3)
+    }
+  }
+
+  private spawnAmbientDecorations(): void {
+    // Fish in water (pond area)
+    if (this.textures.exists('fish_0')) {
+      for (let i = 0; i < 5; i++) {
+        const fx = (POND_POSITION.x + Math.random() * 3) * TILE_SIZE
+        const fy = (POND_POSITION.y + Math.random() * 2) * TILE_SIZE
+        const fish = this.add.image(fx, fy, `fish_${i % 2}`)
+        fish.setDepth(2)
+        this.tweens.add({
+          targets: fish,
+          x: fx + Phaser.Math.Between(-8, 8),
+          duration: 1800 + i * 400,
+          yoyo: true,
+          repeat: -1,
+          ease: 'Sine.easeInOut',
+          onRepeat: () => {
+            fish.setTexture(`fish_${Math.floor(Math.random() * 2)}`)
+            fish.setFlipX(Math.random() < 0.5)
+          },
+        })
+      }
+    }
+
+    // Flower patches on grass
+    if (this.textures.exists('flower_patch')) {
+      const grassSpots = [
+        { x: 16, y: 7 }, { x: 12, y: 14 }, { x: 19, y: 18 },
+        { x: 7, y: 11 }, { x: 23, y: 9 }, { x: 11, y: 17 },
+        { x: 17, y: 21 }, { x: 6, y: 14 },
+      ]
+      grassSpots.forEach(({ x, y }) => {
+        if (MAP_DATA[y] && MAP_DATA[y][x] === TILES.GRASS) {
+          const flower = this.add.image(x * TILE_SIZE + 4, y * TILE_SIZE + 8, 'flower_patch')
+          flower.setDepth(1)
+        }
+      })
+    }
+
+    // Mushrooms near trees
+    if (this.textures.exists('mushroom')) {
+      const mushSpots = [{ x: 3, y: 18 }, { x: 24, y: 5 }, { x: 25, y: 13 }]
+      mushSpots.forEach(({ x, y }) => {
+        const mush = this.add.image(x * TILE_SIZE + 6, y * TILE_SIZE + 8, 'mushroom')
+        mush.setDepth(2)
+      })
+    }
+
+    // Ambient birds — fly across screen every 12 seconds
+    if (this.textures.exists('bird_0')) {
+      this.time.addEvent({
+        delay: 12000,
+        loop: true,
+        callback: () => {
+          const startY = (4 + Math.random() * 6) * TILE_SIZE
+          const bird1 = this.add.image(0, startY, 'bird_0')
+          const bird2 = this.add.image(-12, startY + 4, 'bird_0')
+          bird1.setDepth(8)
+          bird2.setDepth(8)
+          const endX = MAP_WIDTH * TILE_SIZE + 20
+          this.tweens.add({
+            targets: [bird1, bird2],
+            x: `+=${endX}`,
+            duration: 5000,
+            ease: 'Linear',
+            onUpdate: () => {
+              bird1.setTexture(`bird_${Math.floor(this.time.now / 150) % 3 === 2 ? 1 : 0}`)
+              bird2.setTexture(`bird_${Math.floor(this.time.now / 150 + 1) % 3 === 2 ? 1 : 0}`)
+            },
+            onComplete: () => {
+              bird1.destroy()
+              bird2.destroy()
+            },
+          })
+        },
+      })
     }
   }
 
@@ -405,51 +496,33 @@ export class FarmScene extends Phaser.Scene {
   }
 
   private handleInteract(): void {
-    if (!this.player) return
-    const px = this.player.x
-    const py = this.player.y
-    const interactPoint = new Phaser.Geom.Point(px, py)
+    const pt = this.getNearestInteract(200)
+    if (!pt) return
 
-    for (const zone of this.interactionZones) {
-      if (Phaser.Geom.Rectangle.ContainsPoint(zone.bounds, interactPoint)) {
-        if (zone.id === 'journal_house') {
-          EventBridge.emit('openJournal', undefined as unknown as void)
-        } else if (zone.id === 'pond') {
-          EventBridge.emit('openBreathing', undefined as unknown as void)
-        } else if (zone.id.startsWith('npc_')) {
-          const npcId = zone.id.replace('npc_', '')
-          const npc = this.npcs.find((n) => n.npcId === npcId)
-          if (npc) {
-            EventBridge.emit('talkNPC', { npcId, message: npc.message })
-            EventBridge.emit('questProgress', {
-              questKey: 'meet_guide',
-              progress: 1,
-              completed: npcId === 'guide',
-            })
-          }
-        } else if (zone.id === 'garden') {
-          EventBridge.emit('openJournal', undefined as unknown as void)
-        }
-        return
+    if (pt.id === 'journal_house') {
+      EventBridge.emit('openJournal', undefined as unknown as void)
+    } else if (pt.id === 'pond') {
+      EventBridge.emit('openBreathing', undefined as unknown as void)
+    } else if (pt.id.startsWith('npc_')) {
+      const npcId = pt.id.replace('npc_', '')
+      const npc = this.npcs.find((n) => n.npcId === npcId)
+      if (npc) {
+        EventBridge.emit('talkNPC', { npcId, message: npc.message })
+        EventBridge.emit('questProgress', {
+          questKey: 'meet_guide',
+          progress: 1,
+          completed: npcId === 'guide',
+        })
       }
+    } else if (pt.id === 'garden') {
+      EventBridge.emit('openJournal', undefined as unknown as void)
     }
   }
 
   private checkNearbyInteractables(): void {
-    if (!this.player) return
-    const px = this.player.x
-    const py = this.player.y
-    const interactPoint = new Phaser.Geom.Point(px, py)
-    const expandedBounds = (rect: Phaser.Geom.Rectangle) =>
-      new Phaser.Geom.Rectangle(rect.x - 12, rect.y - 12, rect.width + 24, rect.height + 24)
-
-    let found: string | null = null
-    for (const zone of this.interactionZones) {
-      if (Phaser.Geom.Rectangle.ContainsPoint(expandedBounds(zone.bounds), interactPoint)) {
-        found = zone.id
-        break
-      }
-    }
+    // Use exact radius + 16px hint buffer so hint always precedes action
+    const pt = this.getNearestInteract(200)
+    const found = pt ? pt.id : null
 
     if (found !== this.currentNearby) {
       this.currentNearby = found

@@ -27,3 +27,6 @@ npm-debug.log*
 # Build
 dist/
 build/
+
+# Licensed pixel art assets (purchased, not for redistribution)
+public/assets/CozyValley/

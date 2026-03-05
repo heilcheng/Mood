@@ -368,6 +368,16 @@ export function BreathingOverlay() {
                 </div>
               </div>
             )}
+
+            {/* Skip / End Early Button */}
+            <div className="absolute bottom-10 left-0 right-0text-center flex justify-center w-full">
+              <button
+                onClick={() => setStage('feeling')}
+                className="text-white/30 hover:text-white/70 text-xs tracking-widest uppercase transition-colors px-4 py-2"
+              >
+                End practice early
+              </button>
+            </div>
           </div>
         )}
 

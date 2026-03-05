@@ -2,597 +2,457 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react'
 import { useGameStore } from '@/lib/gameStore'
-import { EventBridge } from '@/game/EventBridge'
 import { MOOD_TO_PLANT } from '@/lib/types'
 import type { Mood } from '@/lib/types'
-import { AudioManager } from '@/lib/audioManager'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
-type Activity = 'box_breathing' | 'body_scan' | 'five_senses'
+type Activity = 'box_breathing' | 'body_scan' | 'five_senses' | 'breathing_478' | 'loving_kindness'
+type Stage = 'select' | 'intro' | 'activity' | 'feeling' | 'reward'
 type BoxPhase = 'ready' | 'inhale' | 'hold_in' | 'exhale' | 'hold_out' | 'done'
 
-const BOX_PHASES: BoxPhase[] = ['inhale', 'hold_in', 'exhale', 'hold_out']
-const PHASE_MS: Record<BoxPhase, number> = {
-  ready: 0, inhale: 4000, hold_in: 4000, exhale: 4000, hold_out: 4000, done: 0,
+// ── SVG Icons (Replacing Emojis) ─────────────────────────────────────────────
+const Icons = {
+  BoxBreath: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M14.25 7.756a4.5 4.5 0 100 8.488M7.5 10.5h5.25m-5.25 3h5.25M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+    </svg>
+  ),
+  BodyScan: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 13.5l10.5-11.25L12 10.5h8.25L9.75 21.75 12 13.5H3.75z" />
+    </svg>
+  ),
+  Senses: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+    </svg>
+  ),
+  Breath478: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386l-1.591 1.591M21 12h-2.25m-.386 6.364l-1.591-1.591M12 18.75V21m-4.773-4.227l-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
+    </svg>
+  ),
+  Heart: () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className="w-6 h-6">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M21 8.25c0-2.485-2.099-4.5-4.688-4.5-1.935 0-3.597 1.126-4.312 2.733-.715-1.607-2.377-2.733-4.313-2.733C5.1 3.75 3 5.765 3 8.25c0 7.22 9 12 9 12s9-4.78 9-12z" />
+    </svg>
+  ),
 }
-const PHASE_LABEL: Record<BoxPhase, string> = {
-  ready: '', inhale: 'Breathe In', hold_in: 'Hold', exhale: 'Breathe Out', hold_out: 'Hold', done: '',
-}
-const PHASE_COUNT: Record<BoxPhase, number> = {
-  ready: 0, inhale: 4, hold_in: 4, exhale: 4, hold_out: 4, done: 0,
-}
-const TARGET_CYCLES = 3
 
-// ── Body scan & 5-senses scripts ─────────────────────────────────────────────
+// ── Activity Definitions ─────────────────────────────────────────────────────
+const ACTIVITIES = [
+  { key: 'box_breathing' as Activity, Icon: Icons.BoxBreath, title: 'Box Breathing', sub: 'Calm your nervous system (4-4-4-4 rhythm)', dur: '2 min', color: 'from-blue-500 to-indigo-500' },
+  { key: 'breathing_478' as Activity, Icon: Icons.Breath478, title: 'Relaxation Breath', sub: 'Deep rest and anxiety relief (4-7-8 rhythm)', dur: '3 min', color: 'from-indigo-500 to-purple-500' },
+  { key: 'body_scan' as Activity, Icon: Icons.BodyScan, title: 'Body Scan', sub: 'Release held physical tension head to toe', dur: '4 min', color: 'from-teal-500 to-emerald-500' },
+  { key: 'five_senses' as Activity, Icon: Icons.Senses, title: 'Grounding', sub: 'Anchor in the present using your senses', dur: '3 min', color: 'from-amber-500 to-orange-500' },
+  { key: 'loving_kindness' as Activity, Icon: Icons.Heart, title: 'Kindness', sub: 'Cultivate compassion for self and others', dur: '3 min', color: 'from-rose-500 to-pink-500' },
+]
+
+// ── Scripts ──────────────────────────────────────────────────────────────────
 const BODY_SCAN = [
-  { emoji: '🦶', label: 'Feet & Toes', text: 'Feel the weight of your feet. Let them soften and melt into the ground.' },
-  { emoji: '🦵', label: 'Legs & Knees', text: 'Scan upward through your calves. Allow every muscle to let go.' },
-  { emoji: '🫀', label: 'Belly & Hips', text: 'Watch your belly rise and fall with each breath. Let this area be soft.' },
-  { emoji: '🤍', label: 'Chest & Heart', text: 'Notice the gentle rhythm of your heartbeat. Breathe into the space around it.' },
-  { emoji: '🤲', label: 'Arms & Hands', text: 'Let your arms feel heavy and warm. Relax each finger one by one.' },
-  { emoji: '😌', label: 'Neck & Shoulders', text: 'Drop your shoulders away from your ears. Release everything held there.' },
-  { emoji: '🧠', label: 'Face & Mind', text: 'Soften your jaw, your eyes, your brow. Let your mind be still — like a calm pond.' },
+  { label: 'Feet & Toes', hint: 'Breathe out through your soles', text: 'Feel the weight of your feet. Let them soften and melt into the ground.' },
+  { label: 'Legs & Knees', hint: 'Release the calves and thighs', text: 'Scan upward through your legs. Allow every muscle to simply let go.' },
+  { label: 'Belly & Hips', hint: 'Take a deep breath into the belly', text: 'Watch your center rise and fall with each breath. Let this area be soft.' },
+  { label: 'Chest & Heart', hint: 'Feel the ribs expand', text: 'Notice the gentle rhythm of your heartbeat. Breathe into the space around it.' },
+  { label: 'Arms & Hands', hint: 'Let the fingers uncurl', text: 'Let your arms feel heavy and warm. Relax each finger, one by one.' },
+  { label: 'Neck & Shoulders', hint: 'Drop shoulders away from ears', text: 'Release the burdens held here. Let your shoulders sink downward.' },
+  { label: 'Face & Mind', hint: 'Soften the jaw and brow', text: 'Relax your eyes. Let your mind be still, resting exactly as it is.' },
 ]
 
 const SENSES = [
-  { emoji: '👁️', count: 5, label: 'See', prompt: 'Name 5 things you can see right now.' },
-  { emoji: '✋', count: 4, label: 'Feel', prompt: 'Notice 4 sensations — your weight, your breath, a texture.' },
-  { emoji: '👂', count: 3, label: 'Hear', prompt: 'Listen for 3 distinct sounds in your environment.' },
-  { emoji: '👃', count: 2, label: 'Smell', prompt: 'Take a slow breath. Notice 2 scents, even subtle ones.' },
-  { emoji: '👅', count: 1, label: 'Taste', prompt: 'Be aware of 1 taste in your mouth. Simply notice.' },
+  { count: 5, label: 'See', sense: 'Sight', prompt: 'Acknowledge 5 things you can see right now.' },
+  { count: 4, label: 'Feel', sense: 'Touch', prompt: 'Notice 4 sensations — your weight, temperature, textures.' },
+  { count: 3, label: 'Hear', sense: 'Sound', prompt: 'Listen for 3 distinct sounds in your environment.' },
+  { count: 2, label: 'Smell', sense: 'Scent', prompt: 'Take a breath. Notice 2 subtle scents around you.' },
+  { count: 1, label: 'Taste', sense: 'Taste', prompt: 'Be aware of 1 taste in your mouth. Simply notice.' },
 ]
 
-const FEELINGS = [
-  { emoji: '🌸', label: 'Peaceful', value: 'calm' },
-  { emoji: '☀️', label: 'Uplifted', value: 'happy' },
-  { emoji: '🌿', label: 'Grounded', value: 'gratitude' },
-  { emoji: '☁️', label: 'Still heavy', value: 'stressed' },
-  { emoji: '🌱', label: 'Curious', value: 'growth' },
+const LOVING_KINDNESS = [
+  { target: 'Yourself', text: 'May I be happy. May I be well. May I feel safe. May I live with ease.' },
+  { target: 'Someone you love', text: 'May you be happy. May you be well. May you feel safe. May you live with ease.' },
+  { target: 'Someone neutral', text: 'May you be happy. May you be well. May you feel safe. May you live with ease.' },
+  { target: 'All beings', text: 'May all beings be happy. May all beings be well. May all beings be free from suffering.' },
 ]
 
-const ACTIVITIES = [
-  { key: 'box_breathing' as Activity, emoji: '🌬️', title: 'Box Breathing', sub: 'Calm your nervous system with a 4-4-4-4 breath rhythm.', dur: '~2 min' },
-  { key: 'body_scan' as Activity, emoji: '🌊', title: 'Body Scan', sub: 'A gentle journey from head to toe, releasing held tension.', dur: '~3 min' },
-  { key: 'five_senses' as Activity, emoji: '🌼', title: '5-4-3-2-1 Grounding', sub: 'Anchor yourself in the present moment using your senses.', dur: '~3 min' },
-]
-
-// ── Fancy breathing circle ────────────────────────────────────────────────────
-const R = 90         // circle radius
-const CX = 110       // svg center
-const CIRCUMFERENCE = 2 * Math.PI * R
-
-function BreathingCircle({
-  phase,
-  progress,
-  countdown,
-}: {
-  phase: BoxPhase
-  progress: number
-  countdown: number
-}) {
-  const isExpanding = phase === 'inhale'
-  const isHolding = phase === 'hold_in' || phase === 'hold_out'
-  const isDone = phase === 'done'
-
-  // Sphere scale: 0.55 at rest, 1.0 fully expanded
-  const scale = isExpanding
-    ? 0.55 + progress * 0.45
-    : phase === 'exhale'
-      ? 1.0 - progress * 0.45
-      : phase === 'hold_in' ? 1.0
-        : phase === 'hold_out' ? 0.55
-          : 0.55
-
-  // Ring dash-offset for counting circle
-  const dashOffset = CIRCUMFERENCE * (1 - progress)
-
-  // Color theme per phase
-  const colors = isDone
-    ? { sphere: ['#a7f3d0', '#34d399'], ring: '#10b981', glow: '#34d39966' }
-    : isExpanding
-      ? { sphere: ['#c4b5fd', '#8b5cf6'], ring: '#8b5cf6', glow: '#8b5cf655' }
-      : isHolding
-        ? { sphere: phase === 'hold_in' ? ['#c4b5fd', '#7c3aed'] : ['#bae6fd', '#0ea5e9'], ring: phase === 'hold_in' ? '#7c3aed' : '#0ea5e9', glow: phase === 'hold_in' ? '#7c3aed44' : '#0ea5e944' }
-        : { sphere: ['#bae6fd', '#0ea5e9'], ring: '#0ea5e9', glow: '#0ea5e955' }
-
+// ── Components ───────────────────────────────────────────────────────────────
+function Background() {
   return (
-    <div className="relative flex items-center justify-center" style={{ width: 220, height: 220 }}>
-
-      {/* Outer ambient glow */}
-      <div
-        className="absolute rounded-full transition-all duration-1000"
+    <div className="absolute inset-0 z-0 overflow-hidden pointer-events-none">
+      <div className="absolute inset-0 bg-gradient-to-br from-slate-900 via-indigo-950 to-slate-900" />
+      <div className="absolute inset-0 opacity-40 mix-blend-screen"
         style={{
-          width: 220 * scale + 40,
-          height: 220 * scale + 40,
-          background: `radial-gradient(circle, ${colors.glow} 0%, transparent 70%)`,
-          transition: `width ${PHASE_MS[phase]}ms ease-in-out, height ${PHASE_MS[phase]}ms ease-in-out`,
+          background: 'radial-gradient(circle at 20% 30%, rgba(99, 102, 241, 0.4) 0%, transparent 50%), radial-gradient(circle at 80% 70%, rgba(45, 212, 191, 0.3) 0%, transparent 50%)',
+          animation: 'pulse 15s ease-in-out infinite alternate',
         }}
       />
-
-      {/* SVG ring */}
-      <svg
-        width="220" height="220"
-        viewBox="0 0 220 220"
-        className="absolute top-0 left-0"
-        style={{ transform: 'rotate(-90deg)' }}
-      >
-        {/* Background track */}
-        <circle cx={CX} cy={CX} r={R} fill="none" stroke="rgba(255,255,255,0.08)" strokeWidth="6" />
-        {/* Animated dash ring */}
-        <circle
-          cx={CX} cy={CX} r={R}
-          fill="none"
-          stroke={colors.ring}
-          strokeWidth="6"
-          strokeLinecap="round"
-          strokeDasharray={CIRCUMFERENCE}
-          strokeDashoffset={dashOffset}
-          style={{ transition: 'stroke-dashoffset 0.1s linear, stroke 0.6s ease' }}
-        />
-      </svg>
-
-      {/* Sphere */}
-      <div
-        className="absolute rounded-full transition-all flex items-center justify-center"
-        style={{
-          width: 160 * scale,
-          height: 160 * scale,
-          background: `radial-gradient(circle at 35% 35%, ${colors.sphere[0]}, ${colors.sphere[1]})`,
-          boxShadow: `0 0 40px ${colors.glow}, inset 0 -8px 20px rgba(0,0,0,0.2), inset 0 8px 20px rgba(255,255,255,0.25)`,
-          transition: `width ${PHASE_MS[phase]}ms ease-in-out, height ${PHASE_MS[phase]}ms ease-in-out`,
-        }}
-      >
-        {isDone
-          ? <span className="text-white text-4xl select-none">✓</span>
-          : phase !== 'ready' && (
-            <span className="text-white text-4xl font-bold select-none tabular-nums" style={{ textShadow: '0 2px 8px rgba(0,0,0,0.25)' }}>
-              {countdown}
-            </span>
-          )
-        }
-      </div>
-
-      {/* Floating particles only while breathing */}
-      {phase !== 'ready' && phase !== 'done' && (
-        <div className="absolute inset-0 pointer-events-none overflow-hidden rounded-full">
-          {Array.from({ length: 8 }).map((_, i) => (
-            <div
-              key={i}
-              className="absolute rounded-full opacity-60 animate-float"
-              style={{
-                width: 4 + (i % 3),
-                height: 4 + (i % 3),
-                background: colors.ring,
-                left: `${12 + (i * 11) % 76}%`,
-                top: `${8 + (i * 13 + 5) % 80}%`,
-                animationDelay: `${(i * 0.4) % 2.5}s`,
-                animationDuration: `${2 + (i % 3) * 0.8}s`,
-                filter: 'blur(0.5px)',
-              }}
-            />
-          ))}
-        </div>
-      )}
+      {/* Stars layer 1 */}
+      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20 animate-moveBgSlow" />
     </div>
   )
 }
 
-// ── Countdown tick helper ─────────────────────────────────────────────────────
-function useCountdown(phaseDuration: number, progress: number, maxCount: number): number {
-  return Math.max(1, Math.ceil(maxCount * (1 - progress)))
-}
-
-// ── Progress bar ─────────────────────────────────────────────────────────────
-function MiniBar({ progress, color = 'rgba(255,255,255,0.6)' }: { progress: number; color?: string }) {
+function ProgressDots({ total, current }: { total: number; current: number }) {
   return (
-    <div className="w-52 h-1.5 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.15)' }}>
-      <div className="h-full rounded-full" style={{ width: `${progress * 100}%`, background: color, transition: 'width 0.1s linear' }} />
+    <div className="flex gap-2 justify-center my-6">
+      {Array.from({ length: total }).map((_, i) => (
+        <div key={i} className={`h-1.5 rounded-full transition-all duration-700 ${i < current ? 'w-6 bg-white' : i === current ? 'w-4 bg-white/50' : 'w-1.5 bg-white/20'}`} />
+      ))}
     </div>
   )
 }
 
-// ── Main export ───────────────────────────────────────────────────────────────
+function BreathingSphere({ phase, text, progress, color }: { phase: string, text: string, progress: number, color: string }) {
+  const isExpand = phase.includes('inhale')
+  const isHoldIn = phase.includes('hold_in')
+  // scale ranges from 0.6 (rest) to 1.1 (full)
+  const scale = isExpand ? 0.6 + (progress * 0.5) : phase.includes('exhale') ? 1.1 - (progress * 0.5) : isHoldIn ? 1.1 : 0.6
+
+  return (
+    <div className="relative w-64 h-64 flex items-center justify-center mx-auto my-12">
+      {/* Outer ripples */}
+      <div className="absolute inset-0 rounded-full border border-white/10" style={{ transform: `scale(${scale * 1.4})`, transition: 'transform 0.1s linear' }} />
+      <div className="absolute inset-0 rounded-full border border-white/20" style={{ transform: `scale(${scale * 1.2})`, transition: 'transform 0.1s linear' }} />
+      {/* Main sphere */}
+      <div
+        className={`absolute inset-0 rounded-full bg-gradient-to-tr ${color} blur-sm opacity-50 transition-transform duration-100 ease-linear`}
+        style={{ transform: `scale(${scale})` }}
+      />
+      <div
+        className={`absolute inset-0 rounded-full bg-gradient-to-tr ${color} shadow-2xl transition-transform duration-100 ease-linear flex items-center justify-center text-center p-6`}
+        style={{ transform: `scale(${scale})`, boxShadow: 'inset 0 0 40px rgba(255,255,255,0.2)' }}
+      >
+        <span className="text-white text-xl font-medium tracking-widest uppercase transition-opacity duration-500 ease-in-out">
+          {text}
+        </span>
+      </div>
+    </div>
+  )
+}
+
+// ── Main Content ─────────────────────────────────────────────────────────────
 export function BreathingOverlay() {
   const {
-    breathingOpen, closeBreathing, openJournal,
-    setQuestNotification, userId, addPlant, plants, incrementEntryCount, streak,
-    updateQuest, quests, addLocalEntry, lastJournalDate, setLastBreathDate,
+    breathingOpen, closeBreathing, userId, incrementEntryCount,
+    addLocalEntry, setLastBreathDate, quests, updateQuest,
+    setQuestNotification, streak, openJournal, lastJournalDate
   } = useGameStore()
 
-  const [stage, setStage] = useState<'select' | 'activity' | 'feeling' | 'reward'>('select')
-  const [activity, setActivity] = useState<Activity>('box_breathing')
+  const [stage, setStage] = useState<Stage>('select')
+  const [activity, setActivity] = useState<Activity | null>(null)
 
-  // Box breathing
+  // Activity state
+  const [step, setStep] = useState(0)
   const [phase, setPhase] = useState<BoxPhase>('ready')
-  const [cycles, setCycles] = useState(0)
-  const [phaseProgress, setPhaseProgress] = useState(0)
-  const phaseRef = useRef<BoxPhase>('ready')
-  const cycleRef = useRef(0)
-  const countdown = useCountdown(PHASE_MS[phase], phaseProgress, PHASE_COUNT[phase])
+  const [startTime, setStartTime] = useState(0)
+  const [now, setNow] = useState(0)
 
-  // Step-based (body scan / senses)
-  const [stepIndex, setStepIndex] = useState(0)
-  const [stepProgress, setStepProgress] = useState(0)
-  const STEP_MS = activity === 'body_scan' ? 18000 : 22000
+  // Feeling state
+  const [mood, setMood] = useState<Mood | null>(null)
+  const [note, setNote] = useState('')
 
-  // Post-feeling
-  const [feeling, setFeeling] = useState<string | null>(null)
-  const [feelingText, setFeelingText] = useState('')
-  const [plantName, setPlantName] = useState<string | null>(null)
-  const [submitting, setSubmitting] = useState(false)
+  // Cycles config
+  const totalCycles = activity === 'breathing_478' ? 2 : streak >= 5 ? 4 : 3
 
+  // Reset entirely when closed
   useEffect(() => {
-    if (breathingOpen) {
-      AudioManager.startMeditationMusic()
-    } else {
-      AudioManager.stopMeditationMusic()
+    if (!breathingOpen) {
+      setStage('select')
+      setActivity(null)
+      setMood(null)
+      setNote('')
+      setStep(0)
     }
   }, [breathingOpen])
 
-  const resetAll = useCallback(() => {
-    setStage('select'); setPhase('ready')
-    phaseRef.current = 'ready'; cycleRef.current = 0
-    setCycles(0); setPhaseProgress(0); setStepIndex(0)
-    setStepProgress(0); setFeeling(null); setFeelingText('')
-    setPlantName(null)
-  }, [])
-  const handleClose = () => { resetAll(); closeBreathing() }
-
-  // ── Box breathing tick ───────────────────────────────────────────────────────
-  const nextBoxPhase = useCallback(() => {
-    const cur = phaseRef.current
-    const idx = BOX_PHASES.indexOf(cur)
-    if (idx === -1) return
-    const nextIdx = (idx + 1) % BOX_PHASES.length
-    const next = BOX_PHASES[nextIdx]
-    if (nextIdx === 0) {
-      cycleRef.current += 1
-      setCycles(cycleRef.current)
-      if (cycleRef.current >= TARGET_CYCLES) {
-        phaseRef.current = 'done'
-        setPhase('done')
-        setTimeout(() => setStage('feeling'), 1400)
-        return
-      }
-    }
-    phaseRef.current = next
-    setPhase(next)
-    setPhaseProgress(0)
-  }, [])
-
+  // Timeloop for breathing
   useEffect(() => {
-    if (activity !== 'box_breathing' || phase === 'ready' || phase === 'done') return
-    const dur = PHASE_MS[phase]
-    const start = Date.now()
+    if (stage !== 'activity' || !activity?.includes('breathing')) return
     let raf: number
-    const tick = () => {
-      const p = Math.min((Date.now() - start) / dur, 1)
-      setPhaseProgress(p)
-      if (p < 1) raf = requestAnimationFrame(tick)
-      else nextBoxPhase()
-    }
-    raf = requestAnimationFrame(tick)
+    const loop = (time: number) => { setNow(time); raf = requestAnimationFrame(loop) }
+    raf = requestAnimationFrame(loop)
     return () => cancelAnimationFrame(raf)
-  }, [phase, activity, nextBoxPhase])
+  }, [stage, activity])
 
-  // ── Step tick ────────────────────────────────────────────────────────────────
+  // Breathing logic
   useEffect(() => {
-    if (stage !== 'activity' || activity === 'box_breathing') return
-    setStepProgress(0)
-    const start = Date.now()
-    let raf: number
-    const tick = () => {
-      setStepProgress(Math.min((Date.now() - start) / STEP_MS, 1))
-      raf = requestAnimationFrame(tick)
+    if (stage !== 'activity') return
+    // Box Breathing (4-4-4-4)
+    if (activity === 'box_breathing') {
+      const pms = { ready: 0, inhale: 4000, hold_in: 4000, exhale: 4000, hold_out: 4000, done: 0 }
+      const total = 16000
+      const elapsed = now - startTime
+      if (now === 0) return
+      if (elapsed > total * totalCycles) { setStage('feeling'); return }
+      const cTime = elapsed % total
+      if (cTime < pms.inhale) setPhase('inhale')
+      else if (cTime < pms.inhale + pms.hold_in) setPhase('hold_in')
+      else if (cTime < pms.inhale + pms.hold_in + pms.exhale) setPhase('exhale')
+      else setPhase('hold_out')
     }
-    raf = requestAnimationFrame(tick)
-    return () => cancelAnimationFrame(raf)
-  }, [stepIndex, stage, activity, STEP_MS])
-
-  const steps = activity === 'body_scan' ? BODY_SCAN : SENSES
-  const handleNextStep = () =>
-    stepIndex < steps.length - 1 ? setStepIndex(s => s + 1) : setStage('feeling')
-
-  // ── Submit feeling ────────────────────────────────────────────────────────────
-  const handleSubmit = async () => {
-    if (!feeling || submitting) return
-    setSubmitting(true)
-    try {
-      const text = feelingText.trim()
-        ? `After mindfulness I feel ${feeling}. ${feelingText}`
-        : `After my mindfulness practice I feel ${feeling}.`
-
-      const res = await fetch('/api/analyze', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text, userId, overrideMood: feeling }),
-      })
-      const data = await res.json()
-
-      const plantType = MOOD_TO_PLANT[data.mood as keyof typeof MOOD_TO_PLANT]
-      if (plantType && userId) {
-        const { GardenSystem } = await import('@/game/systems/GardenSystem')
-        const pos = GardenSystem.getNextPlotPosition(plants)
-        if (pos) {
-          const pRes = await fetch('/api/analyze', {
-            method: 'POST', headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({
-              text, userId, savePlant: true, tileX: pos.x, tileY: pos.y,
-              plantType, mood: data.mood, confidence: data.confidence,
-              tags: data.tags, shortPrompt: data.short_reflection_prompt,
-            }),
-          })
-          const { plant } = await pRes.json().catch(() => ({ plant: null }))
-          if (plant) { addPlant(plant); EventBridge.emit('plantAdded', plant) }
-        }
-      }
-      incrementEntryCount()
-      addLocalEntry({ mood: feeling as Mood, tags: [], createdAt: new Date().toISOString(), source: 'mindfulness' })
-      const today = new Date().toISOString().slice(0, 10)
-      setLastBreathDate(today)
-
-      // Quest: calm_minute
-      const calmQ = quests.find(q => q.quest_key === 'calm_minute')
-      if (calmQ && calmQ.status !== 'completed') {
-        updateQuest('calm_minute', 1, 'completed')
-      }
-      setQuestNotification('Quest complete: A Calm Minute!')
-      setTimeout(() => setQuestNotification(null), 4000)
-
-      // Quest: breath_and_reflect (both done today)
-      if (lastJournalDate === today) {
-        const baq = quests.find(q => q.quest_key === 'breath_and_reflect')
-        if (baq && baq.status !== 'completed') {
-          updateQuest('breath_and_reflect', 1, 'completed')
-          setQuestNotification('Quest complete: Breathe & Reflect!')
-          setTimeout(() => setQuestNotification(null), 4000)
-        }
-      }
-
-      setPlantName(plantType || 'seed')
-      setStage('reward')
-    } catch (e) {
-      console.error(e)
-    } finally {
-      setSubmitting(false)
+    // 4-7-8 Breathing
+    else if (activity === 'breathing_478') {
+      const pms = { ready: 0, inhale: 4000, hold_in: 7000, exhale: 8000, hold_out: 0, done: 0 }
+      const total = 19000
+      const elapsed = now - startTime
+      if (now === 0) return
+      if (elapsed > total * totalCycles) { setStage('feeling'); return }
+      const cTime = elapsed % total
+      if (cTime < pms.inhale) setPhase('inhale')
+      else if (cTime < pms.inhale + pms.hold_in) setPhase('hold_in')
+      else setPhase('exhale')
     }
-  }
+  }, [now, stage, activity, startTime, totalCycles])
+
+  // Body Scan / Loving Kindness auto-advance
+  useEffect(() => {
+    if (stage !== 'activity') return
+    if (activity === 'body_scan') {
+      if (step >= BODY_SCAN.length) { setStage('feeling'); return }
+      const t = setTimeout(() => setStep(s => s + 1), 10000) // 10s per body part
+      return () => clearTimeout(t)
+    }
+    if (activity === 'loving_kindness') {
+      if (step >= LOVING_KINDNESS.length) { setStage('feeling'); return }
+      const t = setTimeout(() => setStep(s => s + 1), 12000) // 12s per phrase
+      return () => clearTimeout(t)
+    }
+  }, [stage, activity, step])
 
   if (!breathingOpen) return null
 
+  // Breathing progress calcs
+  const isBox = activity === 'box_breathing'
+  const is478 = activity === 'breathing_478'
+  const phaseDur = isBox ? 4000 : (phase === 'inhale' ? 4000 : phase === 'hold_in' ? 7000 : 8000)
+  const cycleTime = now - startTime
+  const currentPhaseStart = isBox
+    ? (phase === 'inhale' ? 0 : phase === 'hold_in' ? 4000 : phase === 'exhale' ? 8000 : 12000)
+    : (phase === 'inhale' ? 0 : phase === 'hold_in' ? 4000 : 11000)
+  const phaseProgress = Math.min(1, Math.max(0, ((cycleTime % (isBox ? 16000 : 19000)) - currentPhaseStart) / phaseDur))
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center overflow-hidden pointer-events-auto">
-      {/* Background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-[#08001f] via-[#1a0050] to-[#001030] opacity-95" />
+    <div className="fixed inset-0 z-50 flex items-center justify-center font-sans">
+      <Background />
 
-      {/* Star field */}
-      <div className="absolute inset-0 pointer-events-none">
-        {Array.from({ length: 50 }).map((_, i) => (
-          <div key={i} className="absolute rounded-full animate-pulse-soft"
-            style={{
-              width: 1 + (i % 2),
-              height: 1 + (i % 2),
-              background: 'white',
-              top: `${(i * 19 + 3) % 95}%`,
-              left: `${(i * 23 + 7) % 97}%`,
-              opacity: 0.2 + (i % 5) * 0.1,
-              animationDelay: `${(i * 0.3) % 4}s`,
-            }} />
-        ))}
-      </div>
+      <div className="relative z-10 w-full max-w-xl mx-auto px-6 h-full flex flex-col justify-center">
 
-      {/* Close */}
-      <button onClick={handleClose}
-        className="absolute top-6 right-6 z-10 text-white/40 hover:text-white/80 text-sm transition-all px-4 py-2 rounded-xl"
-        style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)' }}>
-        ✕ Close
-      </button>
-
-      <div className="relative w-full max-w-md mx-4 flex flex-col items-center">
-
-        {/* ══ SELECT ═══════════════════════════════════════════════════════════ */}
+        {/* ── STAGE: SELECT ──────────────────────────────────────────────── */}
         {stage === 'select' && (
-          <div className="flex flex-col items-center gap-6 py-6 w-full animate-fadeIn">
-            <div className="text-center">
-              <p className="text-white/40 text-xs uppercase tracking-[0.3em] mb-2">Mindful Moment</p>
-              <h2 className="text-white text-3xl font-bold" style={{ fontFamily: 'Georgia, serif' }}>Choose an activity</h2>
+          <div className="space-y-6 animate-fadeIn">
+            <div className="text-center mb-10">
+              <h2 className="text-3xl text-white font-light tracking-wide mb-3">Mindful Moment</h2>
+              <p className="text-white/60 text-sm">Choose a practice to center yourself.</p>
             </div>
-
-            <div className="flex flex-col gap-3 w-full">
+            <div className="space-y-3">
               {ACTIVITIES.map(a => (
-                <button key={a.key}
-                  onClick={() => { setActivity(a.key); setStage('activity'); setStepIndex(0); setStepProgress(0) }}
-                  className="flex items-start gap-4 w-full rounded-2xl p-5 text-left transition-all hover:scale-[1.02] active:scale-98"
-                  style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.12)', backdropFilter: 'blur(16px)' }}>
-                  <span className="text-3xl">{a.emoji}</span>
-                  <div className="flex-1">
-                    <div className="flex items-center justify-between">
-                      <p className="text-white font-bold text-base">{a.title}</p>
-                      <span className="text-white/35 text-xs">{a.dur}</span>
-                    </div>
-                    <p className="text-white/60 text-sm mt-1 leading-relaxed">{a.sub}</p>
+                <button
+                  key={a.key}
+                  onClick={() => { setActivity(a.key); setStage('intro') }}
+                  className="w-full flex items-center gap-4 bg-white/5 hover:bg-white/10 border border-white/10 rounded-2xl p-4 transition-all text-left group"
+                >
+                  <div className={`w-12 h-12 rounded-full bg-gradient-to-br ${a.color} flex items-center justify-center text-white shadow-lg`}>
+                    <a.Icon />
                   </div>
-                  <span className="text-white/25 text-lg self-center">›</span>
+                  <div className="flex-1">
+                    <h3 className="text-white font-medium text-lg tracking-wide">{a.title}</h3>
+                    <p className="text-white/50 text-xs mt-0.5">{a.sub}</p>
+                  </div>
+                  <div className="text-white/30 text-xs font-medium tracking-widest uppercase group-hover:text-white/60 transition-colors">
+                    {a.dur}
+                  </div>
                 </button>
               ))}
             </div>
-          </div>
-        )}
-
-        {/* ══ BOX BREATHING ════════════════════════════════════════════════════ */}
-        {stage === 'activity' && activity === 'box_breathing' && (
-          <div className="flex flex-col items-center gap-8 py-8 animate-fadeIn">
-            <div className="text-center">
-              <p className="text-white/40 text-xs uppercase tracking-[0.3em] mb-1">Box Breathing</p>
-              {phase !== 'ready' && phase !== 'done' && (
-                <p className="text-white/60 text-sm">Cycle {cycles + 1} of {TARGET_CYCLES}</p>
-              )}
-            </div>
-
-            {phase === 'ready' ? (
-              <>
-                <BreathingCircle phase="ready" progress={0} countdown={4} />
-                <p className="text-white/70 text-sm text-center max-w-[260px] leading-relaxed">
-                  Inhale for 4 &nbsp;·&nbsp; Hold for 4 &nbsp;·&nbsp; Exhale for 4 &nbsp;·&nbsp; Hold for 4<br />
-                  We will do <strong>{TARGET_CYCLES} cycles</strong> together.
-                </p>
-                <button onClick={() => { phaseRef.current = 'inhale'; cycleRef.current = 0; setCycles(0); setPhase('inhale'); setPhaseProgress(0) }}
-                  className="px-12 py-4 rounded-2xl text-white text-lg font-bold transition-all active:scale-95"
-                  style={{ background: 'linear-gradient(135deg, #8b5cf6, #6d28d9)', boxShadow: '0 6px 28px rgba(139,92,246,0.5)' }}>
-                  Begin
-                </button>
-              </>
-            ) : phase === 'done' ? (
-              <>
-                <BreathingCircle phase="done" progress={1} countdown={0} />
-                <p className="text-white text-xl font-medium">Beautifully done 🌙</p>
-              </>
-            ) : (
-              <>
-                <BreathingCircle phase={phase} progress={phaseProgress} countdown={countdown} />
-                <p className="text-white text-2xl font-semibold tracking-wide" style={{ textShadow: '0 2px 20px rgba(255,255,255,0.2)' }}>
-                  {PHASE_LABEL[phase]}
-                </p>
-                <MiniBar progress={phaseProgress} />
-              </>
-            )}
-          </div>
-        )}
-
-        {/* ══ BODY SCAN / 5 SENSES ════════════════════════════════════════════ */}
-        {stage === 'activity' && activity !== 'box_breathing' && (
-          <div className="flex flex-col items-center gap-6 py-6 w-full animate-fadeIn">
-            <div className="text-center">
-              <p className="text-white/40 text-xs uppercase tracking-[0.3em] mb-1">
-                {activity === 'body_scan' ? 'Body Scan' : '5-4-3-2-1 Grounding'}
-              </p>
-              <p className="text-white/50 text-sm">Step {stepIndex + 1} of {steps.length}</p>
-            </div>
-
-            {/* Step dots */}
-            <div className="flex gap-2">
-              {steps.map((_, i) => (
-                <div key={i} className="rounded-full transition-all"
-                  style={{ width: i === stepIndex ? 20 : 8, height: 8, background: i <= stepIndex ? 'rgba(255,255,255,0.7)' : 'rgba(255,255,255,0.15)', transition: 'all 0.3s ease' }} />
-              ))}
-            </div>
-
-            {/* Card */}
-            <div className="w-full rounded-3xl p-8 text-center flex flex-col items-center gap-4"
-              style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', backdropFilter: 'blur(20px)' }}>
-              <div className="w-16 h-16 rounded-full flex items-center justify-center text-4xl"
-                style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.15)' }}>
-                {steps[stepIndex].emoji}
-              </div>
-
-              {'count' in steps[stepIndex] && (
-                <div className="flex gap-2">
-                  {Array.from({ length: (steps[stepIndex] as typeof SENSES[0]).count }).map((_, i) => (
-                    <div key={i} className="w-2 h-2 rounded-full bg-white/60" />
-                  ))}
-                </div>
-              )}
-
-              <p className="text-white font-semibold text-lg">{steps[stepIndex].label}</p>
-              <p className="text-white/80 text-base leading-relaxed">
-                {(steps[stepIndex] as { text?: string; prompt?: string }).text ||
-                  (steps[stepIndex] as { prompt?: string }).prompt}
-              </p>
-            </div>
-
-            <MiniBar progress={stepProgress} />
-
-            <button onClick={handleNextStep}
-              className="px-10 py-4 rounded-2xl text-white font-bold text-base transition-all active:scale-95"
-              style={{ background: 'rgba(255,255,255,0.12)', border: '1px solid rgba(255,255,255,0.2)' }}>
-              {stepIndex < steps.length - 1 ? 'Continue →' : 'Complete ✓'}
+            <button onClick={closeBreathing} className="block mx-auto mt-8 text-white/40 hover:text-white/80 text-sm uppercase tracking-widest transition-colors">
+              Return to Farm
             </button>
           </div>
         )}
 
-        {/* ══ FEELING CHECK-IN ════════════════════════════════════════════════ */}
-        {stage === 'feeling' && (
-          <div className="flex flex-col items-center gap-6 py-8 w-full animate-slideUpFade">
-            <div className="text-center">
-              <p className="text-white/40 text-xs uppercase tracking-[0.3em] mb-2">Check In</p>
-              <h2 className="text-white text-2xl font-bold" style={{ fontFamily: 'Georgia, serif' }}>How do you feel now?</h2>
-              <p className="text-white/60 text-sm mt-2">Take a breath and notice.</p>
+        {/* ── STAGE: INTRO ────────────────────────────────────────────────── */}
+        {stage === 'intro' && (
+          <div className="text-center animate-fadeIn">
+            <div className="w-20 h-20 mx-auto rounded-full bg-white/10 flex items-center justify-center mb-8 pulse-slow">
+              <span className="text-white/80">
+                {(() => { const I = ACTIVITIES.find(x => x.key === activity)?.Icon; return I ? <I /> : null })()}
+              </span>
             </div>
+            <h2 className="text-2xl text-white font-light tracking-wide mb-4">Find a comfortable position</h2>
+            <p className="text-white/50 mb-12 max-w-sm mx-auto">Soften your shoulders. Rest your hands. Gently close your eyes or soften your gaze.</p>
+            <button
+              onClick={() => {
+                setStage('activity')
+                setStartTime(performance.now())
+                setPhase('inhale')
+              }}
+              className="px-8 py-3 rounded-full bg-white text-slate-900 font-medium tracking-wide hover:scale-105 transition-transform"
+            >
+              I am ready
+            </button>
+          </div>
+        )}
 
-            <div className="flex flex-wrap gap-3 justify-center">
-              {FEELINGS.map(f => (
-                <button key={f.value} onClick={() => setFeeling(f.value)}
-                  className="flex flex-col items-center gap-1.5 px-5 py-4 rounded-2xl transition-all active:scale-95"
-                  style={{
-                    background: feeling === f.value ? 'rgba(255,255,255,0.2)' : 'rgba(255,255,255,0.07)',
-                    border: feeling === f.value ? '2px solid rgba(255,255,255,0.6)' : '1px solid rgba(255,255,255,0.12)',
-                    transform: feeling === f.value ? 'scale(1.08)' : 'scale(1)',
-                    boxShadow: feeling === f.value ? '0 0 24px rgba(255,255,255,0.12)' : 'none',
-                  }}>
-                  <span className="text-3xl">{f.emoji}</span>
-                  <span className="text-white text-xs font-semibold">{f.label}</span>
+        {/* ── STAGE: ACTIVITY ──────────────────────────────────────────────── */}
+        {stage === 'activity' && (
+          <div className="animate-fadeIn w-full">
+
+            {/* Box Breathing & 4-7-8 */}
+            {(isBox || is478) && (
+              <div className="text-center">
+                <p className="text-white/60 uppercase tracking-widest text-xs mb-8">
+                  {isBox ? 'Box Breathing' : 'Relaxation Breath'}
+                </p>
+                <BreathingSphere
+                  phase={phase}
+                  progress={phaseProgress}
+                  text={phase.replace('_in', '').replace('_out', '')}
+                  color={isBox ? 'from-indigo-400 to-purple-400' : 'from-purple-400 to-rose-400'}
+                />
+                <ProgressDots total={totalCycles} current={Math.floor((now - startTime) / (isBox ? 16000 : 19000))} />
+              </div>
+            )}
+
+            {/* Body Scan */}
+            {activity === 'body_scan' && step < BODY_SCAN.length && (
+              <div className="flex flex-col h-[60vh] justify-center items-center text-center">
+                <p className="text-teal-400/80 uppercase tracking-widest text-xs font-semibold mb-6 flex items-center gap-2">
+                  <Icons.BodyScan /> Area {step + 1} of 7
+                </p>
+                <h3 className="text-3xl text-white font-light tracking-wide mb-6 animate-slideUp">{BODY_SCAN[step].label}</h3>
+                <p className="text-white/70 text-lg leading-relaxed max-w-md animate-slideUp" style={{ animationDelay: '0.2s' }}>{BODY_SCAN[step].text}</p>
+
+                <div className="mt-16 w-full max-w-xs mx-auto">
+                  <div className="h-0.5 bg-white/10 rounded-full w-full relative">
+                    <div className="absolute top-0 left-0 h-full bg-teal-400 transition-all duration-1000" style={{ width: `${(step / 6) * 100}%` }} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* 5-4-3-2-1 Grounding */}
+            {activity === 'five_senses' && step < SENSES.length && (
+              <div className="text-center">
+                <div className="w-24 h-24 mx-auto border border-amber-500/30 bg-amber-500/10 rounded-full flex items-center justify-center mb-8 text-amber-400">
+                  <span className="text-4xl font-light">{SENSES[step].count}</span>
+                </div>
+                <h3 className="text-2xl text-white font-light tracking-wide mb-4 capitalize">Things you can {SENSES[step].label}</h3>
+                <p className="text-white/60 mb-12">{SENSES[step].prompt}</p>
+
+                <div className="flex justify-center gap-3 mb-16">
+                  {Array.from({ length: SENSES[step].count }).map((_, i) => (
+                    <button key={i} className="w-12 h-12 rounded-full border border-white/20 hover:bg-white/10 hover:scale-105 transition-all focus:bg-amber-500/20 focus:border-amber-500/50" />
+                  ))}
+                </div>
+
+                <button
+                  onClick={() => { if (step < 4) setStep(s => s + 1); else setStage('feeling') }}
+                  className="text-white/50 hover:text-white uppercase tracking-widest text-sm transition-colors"
+                >
+                  Continue →
+                </button>
+              </div>
+            )}
+
+            {/* Loving Kindness */}
+            {activity === 'loving_kindness' && step < LOVING_KINDNESS.length && (
+              <div className="text-center h-[50vh] flex flex-col justify-center animate-fadeIn relative">
+                <div className="absolute inset-0 bg-rose-500/10 blur-3xl rounded-full" />
+                <p className="text-rose-300 uppercase tracking-widest text-xs mb-8">{LOVING_KINDNESS[step].target}</p>
+                <div className="space-y-6 text-2xl text-white/90 font-serif italic mx-auto max-w-lg">
+                  {LOVING_KINDNESS[step].text.split('. ').map((s, i) => (
+                    <p key={i} className="animate-slideUp" style={{ animationDelay: `${i * 1.5}s`, opacity: 0, animationFillMode: 'forwards' }}>
+                      {s.replace('.', '')}
+                    </p>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ── STAGE: FEELING CHECK-IN ────────────────────────────────────────── */}
+        {stage === 'feeling' && (
+          <div className="w-full bg-white/5 border border-white/10 rounded-3xl p-8 backdrop-blur-xl animate-scaleIn">
+            <h2 className="text-2xl text-center text-white font-light mb-8 cursor-default">How do you feel now?</h2>
+
+            <div className="grid grid-cols-3 gap-3 mb-8">
+              {(['calm', 'happy', 'gratitude', 'growth', 'stressed', 'crisis'] as Mood[]).map(m => (
+                <button
+                  key={m}
+                  onClick={() => setMood(m)}
+                  className={`py-4 rounded-2xl border transition-all flex flex-col items-center gap-2 ${mood === m ? 'bg-white/20 border-white/40 scale-105 shadow-xl' : 'bg-white/5 border-white/10 hover:bg-white/10 hover:border-white/20'
+                    }`}
+                >
+                  <span className="text-white/80 font-medium text-sm capitalize">{m}</span>
                 </button>
               ))}
             </div>
 
             <textarea
-              value={feelingText}
-              onChange={e => setFeelingText(e.target.value)}
-              placeholder="Any thoughts you'd like to capture? (optional)"
-              rows={3}
-              className="w-full rounded-2xl px-5 py-4 text-white placeholder-white/30 text-sm resize-none focus:outline-none"
-              style={{ background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)', backdropFilter: 'blur(10px)' }}
+              placeholder="Any thoughts arising? (optional)"
+              value={note}
+              onChange={e => setNote(e.target.value)}
+              className="w-full bg-black/20 border border-white/10 rounded-xl p-4 text-white placeholder-white/30 resize-none h-24 mb-6 focus:outline-none focus:border-white/30 transition-colors"
             />
 
-            <button onClick={handleSubmit} disabled={!feeling || submitting}
-              className="w-full py-4 rounded-2xl text-white text-lg font-bold transition-all active:scale-95 disabled:opacity-40"
-              style={{ background: 'linear-gradient(135deg, #34d399, #059669)', boxShadow: '0 6px 24px rgba(52,211,153,0.35)' }}>
-              {submitting ? 'Planting…' : '🌱 Plant This Feeling'}
-            </button>
+            <button
+              disabled={!mood}
+              onClick={() => {
+                const today = new Date().toISOString().slice(0, 10)
+                addLocalEntry({ mood: mood!, tags: [activity!], createdAt: new Date().toISOString(), source: 'mindfulness', note: note.trim() || undefined })
+                incrementEntryCount()
+                setLastBreathDate(today)
 
-            <button onClick={handleClose} className="text-white/30 hover:text-white/60 text-sm transition-colors">
-              Skip & return to farm
+                // Cross-quests
+                const brQ = quests.find(q => q.quest_key === 'breath_and_reflect')
+                if (brQ && brQ.status !== 'completed') {
+                  if (lastJournalDate === today) {
+                    updateQuest('breath_and_reflect', 1, 'completed')
+                    setQuestNotification('Quest complete: Mindful Cycle! 🧘‍♀️')
+                    setTimeout(() => setQuestNotification(null), 3000)
+                  }
+                }
+                const calmQ = quests.find(q => q.quest_key === 'calm_minute')
+                if (calmQ && calmQ.status !== 'completed') {
+                  updateQuest('calm_minute', 1, 'completed')
+                  setQuestNotification('Quest complete: A Moment of Calm! ☁️')
+                  setTimeout(() => setQuestNotification(null), 3000)
+                }
+
+                setStage('reward')
+              }}
+              className={`w-full py-4 rounded-xl text-lg tracking-wide transition-all ${mood ? 'bg-white text-slate-900 font-medium hover:bg-white/90' : 'bg-white/10 text-white/30 cursor-not-allowed'
+                }`}
+            >
+              Complete Practice
             </button>
           </div>
         )}
 
-        {/* ══ REWARD ══════════════════════════════════════════════════════════ */}
+        {/* ── STAGE: REWARD ──────────────────────────────────────────────────── */}
         {stage === 'reward' && (
-          <div className="flex flex-col items-center gap-6 py-10 animate-slideUpFade text-center">
-            {/* Glow orb */}
-            <div className="relative">
-              <div className="absolute inset-0 rounded-full blur-2xl"
-                style={{ background: 'rgba(52,211,153,0.4)', transform: 'scale(1.5)' }} />
-              <div className="relative w-24 h-24 rounded-full flex items-center justify-center text-5xl border-2 border-emerald-400/50"
-                style={{ background: 'rgba(52,211,153,0.2)' }}>
-                🌱
-              </div>
+          <div className="text-center animate-fadeIn">
+            <div className="text-6xl mb-6 animate-bounce select-none">
+              {mood ? MOOD_TO_PLANT[mood] : '🌱'}
             </div>
+            <h2 className="text-3xl text-white font-light mb-2">Well done.</h2>
+            <p className="text-white/60 mb-12">You've nurtured your mind and your garden.</p>
 
-            <div>
-              <h2 className="text-white text-3xl font-bold" style={{ fontFamily: 'Georgia, serif' }}>Your Garden Grows</h2>
-              <p className="text-white/70 text-base mt-3 leading-relaxed max-w-xs mx-auto">
-                A <span className="font-bold text-emerald-300 uppercase tracking-widest">{plantName}</span> was planted in your farm to mark this moment of calm.
-              </p>
+            <div className="flex justify-center gap-4">
+              <button
+                onClick={closeBreathing}
+                className="px-8 py-3 rounded-full border border-white/20 text-white hover:bg-white/10 transition-colors"
+              >
+                Return to Farm
+              </button>
+              <button
+                onClick={() => { closeBreathing(); setTimeout(openJournal, 500) }}
+                className="px-8 py-3 rounded-full bg-white text-slate-900 font-medium hover:bg-white/90 transition-colors"
+              >
+                Journal Now
+              </button>
             </div>
-
-            <div className="flex items-center gap-3 px-6 py-3 rounded-2xl"
-              style={{ background: 'rgba(255,165,0,0.15)', border: '1px solid rgba(255,165,0,0.3)' }}>
-              <span className="text-2xl">🔥</span>
-              <span className="text-white/80 text-sm font-semibold">{streak} day streak — keep it going!</span>
-            </div>
-
-            <button
-              onClick={() => { handleClose(); openJournal() }}
-              className="w-full py-3 rounded-2xl text-white text-base font-semibold transition-all active:scale-95"
-              style={{ background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', maxWidth: 340 }}>
-              Journal your experience 📝
-            </button>
-
-            <button onClick={handleClose}
-              className="w-full py-4 rounded-2xl text-white text-xl font-bold transition-all active:scale-95"
-              style={{ background: 'linear-gradient(135deg, #34d399, #059669)', boxShadow: '0 6px 24px rgba(52,211,153,0.4)', maxWidth: 340 }}>
-              Return to Farm 🌾
-            </button>
           </div>
         )}
 

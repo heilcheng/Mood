@@ -16,6 +16,11 @@ interface GameStore {
   unlockedItems: string[]
   entryCount: number
 
+  // Local persistence (guest users)
+  localEntries: Array<{ mood: Mood; tags: string[]; createdAt: string; source: 'journal' | 'mindfulness' }>
+  lastBreathDate: string | null
+  lastJournalDate: string | null
+
   // UI state
   hasSeenTutorial: boolean
   hasPickedAvatar: boolean
@@ -54,6 +59,9 @@ interface GameStore {
   setUnlockedItems: (items: string[]) => void
   setEntryCount: (count: number) => void
   incrementEntryCount: () => void
+  addLocalEntry: (e: { mood: Mood; tags: string[]; createdAt: string; source: 'journal' | 'mindfulness' }) => void
+  setLastBreathDate: (d: string | null) => void
+  setLastJournalDate: (d: string | null) => void
 
   openJournal: () => void
   closeJournal: () => void
@@ -84,6 +92,13 @@ export const useGameStore = create<GameStore>((set) => ({
   quests: [],
   unlockedItems: [],
   entryCount: 0,
+  // Local persistence seeded from localStorage (SSR-safe)
+  localEntries: typeof window !== 'undefined'
+    ? JSON.parse(localStorage.getItem('mf_entries') ?? '[]') : [],
+  lastBreathDate: typeof window !== 'undefined'
+    ? localStorage.getItem('mf_breath_date') || null : null,
+  lastJournalDate: typeof window !== 'undefined'
+    ? localStorage.getItem('mf_journal_date') || null : null,
   hasSeenTutorial: false,
   hasPickedAvatar: false,
   journalOpen: false,
@@ -122,6 +137,19 @@ export const useGameStore = create<GameStore>((set) => ({
   setUnlockedItems: (items) => set({ unlockedItems: items }),
   setEntryCount: (count) => set({ entryCount: count }),
   incrementEntryCount: () => set((s) => ({ entryCount: s.entryCount + 1 })),
+  addLocalEntry: (entry) => set((s) => {
+    const next = [...s.localEntries, entry]
+    if (typeof window !== 'undefined') localStorage.setItem('mf_entries', JSON.stringify(next))
+    return { localEntries: next }
+  }),
+  setLastBreathDate: (d) => {
+    if (typeof window !== 'undefined') localStorage.setItem('mf_breath_date', d ?? '')
+    set({ lastBreathDate: d })
+  },
+  setLastJournalDate: (d) => {
+    if (typeof window !== 'undefined') localStorage.setItem('mf_journal_date', d ?? '')
+    set({ lastJournalDate: d })
+  },
 
   openJournal: () => set({ journalOpen: true }),
   closeJournal: () => set({ journalOpen: false }),

@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import { useGameStore } from '@/lib/gameStore'
 import { EventBridge } from '@/game/EventBridge'
 import { MOOD_TO_PLANT } from '@/lib/types'
+import type { Mood } from '@/lib/types'
 import { AudioManager } from '@/lib/audioManager'
 
 // ── Types ─────────────────────────────────────────────────────────────────────
@@ -195,7 +196,7 @@ export function BreathingOverlay() {
   const {
     breathingOpen, closeBreathing, openJournal,
     setQuestNotification, userId, addPlant, plants, incrementEntryCount, streak,
-    updateQuest, quests,
+    updateQuest, quests, addLocalEntry, lastJournalDate, setLastBreathDate,
   } = useGameStore()
 
   const [stage, setStage] = useState<'select' | 'activity' | 'feeling' | 'reward'>('select')
@@ -325,14 +326,30 @@ export function BreathingOverlay() {
         }
       }
       incrementEntryCount()
+      addLocalEntry({ mood: feeling as Mood, tags: [], createdAt: new Date().toISOString(), source: 'mindfulness' })
+      const today = new Date().toISOString().slice(0, 10)
+      setLastBreathDate(today)
+
+      // Quest: calm_minute
       const calmQ = quests.find(q => q.quest_key === 'calm_minute')
       if (calmQ && calmQ.status !== 'completed') {
         updateQuest('calm_minute', 1, 'completed')
       }
+      setQuestNotification('Quest complete: A Calm Minute!')
+      setTimeout(() => setQuestNotification(null), 4000)
+
+      // Quest: breath_and_reflect (both done today)
+      if (lastJournalDate === today) {
+        const baq = quests.find(q => q.quest_key === 'breath_and_reflect')
+        if (baq && baq.status !== 'completed') {
+          updateQuest('breath_and_reflect', 1, 'completed')
+          setQuestNotification('Quest complete: Breathe & Reflect!')
+          setTimeout(() => setQuestNotification(null), 4000)
+        }
+      }
+
       setPlantName(plantType || 'seed')
       setStage('reward')
-      setQuestNotification('Quest: A Calm Minute — complete!')
-      setTimeout(() => setQuestNotification(null), 3000)
     } catch (e) {
       console.error(e)
     } finally {

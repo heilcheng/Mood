@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, useMemo } from 'react'
 import { useGameStore } from '@/lib/gameStore'
 import { GlassModal } from '@/components/ui/GlassModal'
 import { GlassButton } from '@/components/ui/GlassButton'
@@ -175,7 +175,7 @@ function StarField() {
 
 // ── Main component ────────────────────────────────────────────────────────────
 export function DailyRecordModal() {
-  const { dailyRecordOpen, closeDailyRecord, userId, openWeeklyInsight, entryCount, streak } = useGameStore()
+  const { dailyRecordOpen, closeDailyRecord, userId, openWeeklyInsight, entryCount, streak, localEntries } = useGameStore()
   const [tab, setTab] = useState<'record' | 'insights'>('record')
   const [analysis, setAnalysis] = useState<EmotionAnalysis | null>(null)
   const [narrative, setNarrative] = useState<string | null>(null)
@@ -219,7 +219,29 @@ export function DailyRecordModal() {
 
   if (!dailyRecordOpen) return null
 
-  const recentMoods: (Mood | null)[] = analysis?.recentMoods ?? Array(30).fill(null)
+  // Compute effective analysis: API data if available, else derived from localEntries
+  const effectiveAnalysis = useMemo<EmotionAnalysis | null>(() => {
+    if (analysis && analysis.totalEntries > 0) return analysis
+    if (!localEntries.length) return analysis
+    const counts: Record<string, number> = {}
+    for (const e of localEntries) { counts[e.mood] = (counts[e.mood] ?? 0) + 1 }
+    const dominant = (Object.entries(counts).sort((a, b) => b[1] - a[1])[0]?.[0] ?? null) as Mood | null
+    const today = new Date()
+    const recentMoods: (Mood | null)[] = Array(30).fill(null).map((_, i) => {
+      const d = new Date(today); d.setDate(today.getDate() - (29 - i))
+      const key = d.toISOString().slice(0, 10)
+      return localEntries.find(e => e.createdAt.startsWith(key))?.mood as Mood | null ?? null
+    })
+    return {
+      totalEntries: localEntries.length,
+      moodCounts: counts as Record<Mood, number>,
+      dominantMood: dominant,
+      recentMoods,
+      tags: [],
+    } as EmotionAnalysis
+  }, [analysis, localEntries])
+
+  const recentMoods: (Mood | null)[] = effectiveAnalysis?.recentMoods ?? Array(30).fill(null)
   const today = new Date()
 
   const calDays = recentMoods.map((mood, i) => {
@@ -237,10 +259,10 @@ export function DailyRecordModal() {
   })()
 
   const moodOrder: Mood[] = ['happy', 'gratitude', 'calm', 'growth', 'stressed', 'crisis']
-  const moodCounts = analysis?.moodCounts ?? {}
-  const total = analysis?.totalEntries ?? 0
+  const moodCounts = effectiveAnalysis?.moodCounts ?? {}
+  const total = effectiveAnalysis?.totalEntries ?? 0
   const maxCount = Math.max(1, ...Object.values(moodCounts))
-  const dominant = analysis?.dominantMood ?? null
+  const dominant = effectiveAnalysis?.dominantMood ?? null
 
   return (
     <GlassModal isOpen={dailyRecordOpen} onClose={closeDailyRecord} title="Daily Record" maxWidth="max-w-lg">
@@ -250,11 +272,10 @@ export function DailyRecordModal() {
           <button
             key={t}
             onClick={() => setTab(t)}
-            className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all capitalize ${
-              tab === t
+            className={`flex-1 py-2 rounded-xl text-sm font-semibold transition-all capitalize ${tab === t
                 ? 'bg-white/25 text-white border border-white/40'
                 : 'bg-white/8 text-white/50 hover:bg-white/15'
-            }`}
+              }`}
           >
             {t === 'record' ? '📅 Daily Record' : '✨ AI Insights'}
           </button>
@@ -389,11 +410,11 @@ export function DailyRecordModal() {
           </div>
 
           {/* Top tags cloud */}
-          {(analysis?.tags ?? []).length > 0 && (
+          {(effectiveAnalysis?.tags ?? []).length > 0 && (
             <div>
               <p className="text-white/60 text-xs uppercase tracking-wide mb-2">Common Themes</p>
               <div className="flex flex-wrap gap-2">
-                {(analysis?.tags ?? []).map((tag, i) => (
+                {(effectiveAnalysis?.tags ?? []).map((tag, i) => (
                   <span
                     key={tag}
                     className="text-xs bg-white/15 border border-white/20 rounded-full px-3 py-1 text-white/80

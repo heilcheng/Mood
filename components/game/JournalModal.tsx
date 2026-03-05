@@ -5,7 +5,7 @@ import { GlassModal } from '@/components/ui/GlassModal'
 import { GlassButton } from '@/components/ui/GlassButton'
 import { useGameStore } from '@/lib/gameStore'
 import { EventBridge } from '@/game/EventBridge'
-import type { AnalyzeResult } from '@/lib/types'
+import type { AnalyzeResult, Mood } from '@/lib/types'
 import { MOOD_EMOJI, MOOD_TO_PLANT, QUESTS } from '@/lib/types'
 
 const GENTLE_PROMPTS = [
@@ -31,7 +31,12 @@ const CRISIS_RESOURCES = [
 ]
 
 export function JournalModal() {
-  const { journalOpen, closeJournal, openBreathing, userId, addPlant, incrementEntryCount, entryCount, plants, setLastMood, setLastAnalysis, setQuestNotification, quests, updateQuest } = useGameStore()
+  const {
+    journalOpen, closeJournal, openBreathing, userId,
+    addPlant, incrementEntryCount, entryCount, plants,
+    setLastMood, setLastAnalysis, setQuestNotification, quests, updateQuest,
+    addLocalEntry, lastBreathDate, setLastJournalDate,
+  } = useGameStore()
   const [text, setText] = useState('')
   const [selectedMood, setSelectedMood] = useState<keyof typeof MOOD_EMOJI | null>(null)
   const [loading, setLoading] = useState(false)
@@ -59,7 +64,6 @@ export function JournalModal() {
         body: JSON.stringify({ text, userId, overrideMood: selectedMood }),
       })
       const data: AnalyzeResult = await res.json()
-      // If user manually chose crisis, or AI overrides, respect data.mood. Otherwise gently defer to selectedMood.
       const finalMood = data.mood === 'crisis' ? 'crisis' : (selectedMood || data.mood)
       data.mood = finalMood
 
@@ -67,38 +71,35 @@ export function JournalModal() {
       setLastMood(data.mood)
       setLastAnalysis(data)
 
-      // Save journal entry + plant via analyze route (which handles DB)
-      if (data.mood !== 'crisis' && userId) {
-        const plantType = MOOD_TO_PLANT[data.mood]
-        if (plantType) {
-          const { GardenSystem } = await import('@/game/systems/GardenSystem')
-          const nextPos = GardenSystem.getNextPlotPosition(plants)
-          if (nextPos) {
-            const plantRes = await fetch('/api/analyze', {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({
-                text,
-                userId,
-                savePlant: true,
-                tileX: nextPos.x,
-                tileY: nextPos.y,
-                plantType,
-                mood: data.mood,
-                confidence: data.confidence,
-                tags: data.tags,
-                shortPrompt: data.short_reflection_prompt,
-              }),
-            })
-            const { plant } = await plantRes.json().catch(() => ({ plant: null }))
-            if (plant) {
-              addPlant(plant)
-              EventBridge.emit('plantAdded', plant)
+      if (data.mood !== 'crisis') {
+        // DB save (logged-in users only)
+        if (userId) {
+          const plantType = MOOD_TO_PLANT[data.mood]
+          if (plantType) {
+            const { GardenSystem } = await import('@/game/systems/GardenSystem')
+            const nextPos = GardenSystem.getNextPlotPosition(plants)
+            if (nextPos) {
+              const plantRes = await fetch('/api/analyze', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                  text, userId, savePlant: true,
+                  tileX: nextPos.x, tileY: nextPos.y,
+                  plantType, mood: data.mood, confidence: data.confidence,
+                  tags: data.tags, shortPrompt: data.short_reflection_prompt,
+                }),
+              })
+              const { plant } = await plantRes.json().catch(() => ({ plant: null }))
+              if (plant) { addPlant(plant); EventBridge.emit('plantAdded', plant) }
             }
           }
         }
 
+        // Always: local entry + counters + quests (guests included)
+        addLocalEntry({ mood: data.mood as Mood, tags: data.tags ?? [], createdAt: new Date().toISOString(), source: 'journal' })
         incrementEntryCount()
+        const today = new Date().toISOString().slice(0, 10)
+        setLastJournalDate(today)
 
         // Quest: first reflection
         const firstReflQ = quests.find(q => q.quest_key === 'first_reflection')
@@ -116,6 +117,16 @@ export function JournalModal() {
           if (newProgress >= 7) {
             setQuestNotification('You have 7 reflections! View your Weekly Insight!')
             setTimeout(() => setQuestNotification(null), 5000)
+          }
+        }
+
+        // Quest: breath_and_reflect (both done today)
+        if (lastBreathDate === today) {
+          const baq = quests.find(q => q.quest_key === 'breath_and_reflect')
+          if (baq && baq.status !== 'completed') {
+            updateQuest('breath_and_reflect', 1, 'completed')
+            setQuestNotification('Quest complete: Breathe & Reflect!')
+            setTimeout(() => setQuestNotification(null), 4000)
           }
         }
       }

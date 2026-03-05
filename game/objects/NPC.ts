@@ -20,6 +20,7 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
   private currentDir: 'down' | 'up' | 'left' | 'right' = 'down'
 
   constructor(scene: Phaser.Scene, config: NPCConfig) {
+    // Frame 0 = front-facing idle (first frame of walk-down row)
     super(scene, config.x, config.y, config.textureKey, 0)
     this.npcId = config.id
     this.message = config.message
@@ -38,6 +39,11 @@ export class NPC extends Phaser.Physics.Arcade.Sprite {
 
   update(delta: number): void {
     if (!this.active || !this.scene) return
+
+    // Keep front-facing idle (frame 0) at all times for simple NPCs
+    if (this.frame.name !== '0') {
+      this.setFrame(0)
+    }
 
     // Simple patrol behavior
     this.patrolTimer += delta

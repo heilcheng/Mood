@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState } from 'react'
 import { useGameStore } from '@/lib/gameStore'
 import { EventBridge } from '@/game/EventBridge'
 import type { AvatarChoice } from '@/lib/types'
@@ -43,31 +43,41 @@ const AVATARS: Array<{
         },
     ]
 
-function PixelSprite({ src, size = 80 }: { src: string; size?: number }) {
-    const canvasRef = useRef<HTMLCanvasElement>(null)
-    useEffect(() => {
-        const canvas = canvasRef.current
-        if (!canvas) return
-        const ctx = canvas.getContext('2d')
-        if (!ctx) return
-        const img = new Image()
-        img.src = src
-        img.onload = () => {
-            ctx.clearRect(0, 0, size, size)
-            ctx.imageSmoothingEnabled = false
-
-            // Assume frame 0 is the top-left 32x32 block for all characters/animals
-            // We scale it up to the requested 'size' (e.g., 72x72)
-            ctx.drawImage(img, 0, 0, 32, 32, 0, 0, size, size)
-        }
-    }, [src, size])
+function PixelSprite({ src, size = 80, isCow = false }: { src: string; size?: number; isCow?: boolean }) {
+    if (isCow) {
+        return (
+            <img
+                src={src}
+                alt="Clovis"
+                style={{
+                    width: size,
+                    height: size,
+                    imageRendering: 'pixelated',
+                    objectFit: 'contain',
+                }}
+            />
+        )
+    }
+    // Human chars: clip to the first 32x32 frame (top-left) of their spritesheet
     return (
-        <canvas
-            ref={canvasRef}
-            width={size}
-            height={size}
-            style={{ imageRendering: 'pixelated', width: size, height: size }}
-        />
+        <div
+            style={{
+                width: size,
+                height: size,
+                overflow: 'hidden',
+                flexShrink: 0,
+            }}
+        >
+            <img
+                src={src}
+                alt="character"
+                style={{
+                    width: size * 5,  // 5 cols in sheet → scale 1 col to 'size'
+                    imageRendering: 'pixelated',
+                    display: 'block',
+                }}
+            />
+        </div>
     )
 }
 
@@ -90,7 +100,7 @@ export function AvatarPickerOverlay() {
             const phaserGame = (window as unknown as Record<string, unknown>).PHASER_GAME
             if (phaserGame) {
                 const existing = (phaserGame as unknown as Record<string, unknown>)._initData as Record<string, unknown> | undefined
-                ;(phaserGame as unknown as Record<string, unknown>)._initData = { ...(existing ?? {}), avatar: selected }
+                    ; (phaserGame as unknown as Record<string, unknown>)._initData = { ...(existing ?? {}), avatar: selected }
             }
             EventBridge.emit('avatarChanged', { avatar: selected })
         }, 600)
@@ -168,7 +178,7 @@ export function AvatarPickerOverlay() {
                                     }}
                                 />
 
-                                <PixelSprite src={a.sprite} size={72} />
+                                <PixelSprite src={a.sprite} size={72} isCow={a.key === 'cow'} />
 
                                 <div className="text-center">
                                     <p className="text-white font-bold text-base">{a.label}</p>

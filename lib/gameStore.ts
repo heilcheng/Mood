@@ -98,8 +98,8 @@ export const useGameStore = create<GameStore>((set) => ({
   userSettings: {
     displayName: null,
     journalPromptStyle: 'gentle',
-    musicVolume: 70,
-    sfxVolume: 80,
+    musicVolume: 55,
+    sfxVolume: 45,
   },
 
   setHasSeenTutorial: (seen) => set({ hasSeenTutorial: seen }),

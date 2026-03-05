@@ -57,14 +57,11 @@ export function GameCanvas() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Start ambient audio on first mount (requires user interaction — browser allows it after click)
+  // Start audio on first user interaction (browser autoplay policy)
   useEffect(() => {
     const isNight = weather === 'night'
-    AudioManager.setMusicVolume(userSettings.musicVolume ?? 70)
-    AudioManager.setSfxVolume(userSettings.sfxVolume ?? 80)
     const startAudio = () => {
-      AudioManager.startBgm(isNight)
-      AudioManager.startAmbient(isNight)
+      AudioManager.init(isNight, userSettings.musicVolume ?? 55, userSettings.sfxVolume ?? 45)
       window.removeEventListener('pointerdown', startAudio)
     }
     window.addEventListener('pointerdown', startAudio)

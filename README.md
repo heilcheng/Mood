@@ -1,71 +1,80 @@
 # Mood — Cozy Emotional Farming Game
 
-> **Team:** Victoria Sister Fans Club
-> **Hackathon Project:** Mood
-> **Team Members:** Hailey Cheng (City University of Hong Kong) · Rabin Sarki (Hong Kong University of Science and Technology)
+**Team:** Victoria Sister Fans Club &nbsp;·&nbsp; **Members:** Hailey Cheng (CityUHK) &nbsp;·&nbsp; Rabin Sarki (HKUST)
+
+---
+
+## What is Mood?
+
+Mood is a cozy pixel art farming game where your garden grows from how you feel. Write a reflection in the Journal House, and AI reads the emotional tone — then a plant sprouts in your garden that matches it. Come back the next day and you'll see a little more colour than before.
+
+We built it because journaling can feel like homework, and we wanted it to feel like tending something alive instead.
 
 ---
 
 ## Inspiration
 
-We wanted to make emotional reflection feel gentle and enjoyable instead of clinical. Journaling helps people process feelings, but it can be hard to maintain as a habit. Inspired by cozy games like Stardew Valley and Animal Crossing, we imagined a world where reflecting on your day grows a peaceful garden.
+We grew up playing Stardew Valley and Animal Crossing during stressful periods, and noticed how much a quiet game loop could calm the mind. We wondered: what if the game itself *was* the reflection? What if writing honestly about your day was the same act as planting a seed?
+
+That idea became Mood.
+
+---
 
 ## What It Does
 
-**Mood** is a cozy pixel art farming game where players grow a garden through journaling. When players write about their day, AI analyzes the emotional tone and transforms it into flowers, weather changes, and growth in the farm. Over time the garden becomes a visual reflection of emotional experiences.
+You explore a small farm — walk to the barn to write in your journal, visit the duck pond for breathing exercises, talk to the NPCs. Each time you write, Google Cloud AI picks up on your emotional tone and grows a different plant: sunflowers for happy days, lavender when you're stressed, lotus for calm, daisies for gratitude. Over time your garden becomes a quiet picture of your emotional life.
 
 ---
 
 ## Key Features
 
-### 🌱 AI-Powered Emotional Journaling
-Players write a short reflection inside the Journal House. Google Cloud AI analyzes the emotional tone and identifies moods such as happiness, calmness, stress, gratitude, or personal growth. Each emotion grows a different plant in the garden.
+### 🌱 AI Emotional Journaling
+Write a short reflection inside the Journal House. Gemini reads the tone, picks a mood, and grows a matching plant in your garden. Five moods, five plant types, one growing garden.
 
-### 🌸 Living Garden That Reflects Your Mind
-The garden evolves based on emotional patterns:
-- Gratitude → Daisies
-- Calm reflections → Lotus flowers
-- Processing stress → Lavender
-- Happy days → Sunflowers
-- Personal growth → Oak saplings
+### 🌸 A Garden That's Yours
+- Happy → Sunflowers
+- Grateful → Daisies
+- Calm → Lotus flowers
+- Stressed → Lavender
+- Growing → Oak saplings
 
-Plants grow from seeds to full bloom, creating a visual representation of emotional progress.
+Plants go from seed to full bloom as your entries build up.
 
-### 🐮 Cozy Exploration Gameplay
-Players explore the farm using WASD controls and choose their avatar. They talk to NPCs, complete small quests, and explore peaceful locations like the pond and garden plots.
+### 🐮 A Farm Worth Exploring
+Walk around using WASD, chat with NPCs, discover the pond and the garden plots, and pick your avatar. It's deliberately unhurried.
 
-### 🧘 Mindfulness Activities
-The farm includes calming activities integrated into the world — box breathing, body scan, and 5-senses grounding exercises by the pond. Gentle NPC prompts guide players through each activity.
+### 🧘 Mindfulness at the Pond
+Box breathing, body scan, and a 5-senses exercise — all tucked into the world naturally, not behind a separate menu.
 
-### 🤖 Weekly AI Reflection
-After several journal entries the system generates a short reflection summarizing emotional patterns, helping players notice trends in a supportive and non-judgmental way.
+### 🤖 Weekly Reflection
+After enough entries the game generates a short AI reflection on your emotional week — patterns you might not have noticed, written gently.
 
-### 🌿 Healthy Tech–Life Balance
-The game rewards stepping away. Plants grow faster when players return after taking breaks, encouraging healthier digital habits.
+### 🌿 It Rewards Rest
+Plants grow a little faster when you return after a break. The game is genuinely happier when you step away.
 
 ---
 
-## Problem Statement
+## The Problem We Were Solving
 
-Mental health apps often feel like tools — clinical, metrics-driven, and easy to abandon. People want to reflect on their feelings but struggle to build the habit. **Mood** addresses this by wrapping emotional journaling in the warmth of a cozy game: the act of writing becomes planting, and the garden becomes your emotional history made visible.
+Most mental health apps feel clinical. You open them, log a number, close them. The habit doesn't stick because there's nothing to come back *for*. We wanted the act of reflection to feel like something you tend — something that grows — so returning felt natural rather than obligatory.
 
 ---
 
 ## Tech Stack
 
-| Layer | Technology |
+| | |
 |---|---|
 | Framework | [Next.js 14](https://nextjs.org/) (App Router) |
 | Game Engine | [Phaser 3](https://phaser.io/) |
 | Styling | [Tailwind CSS](https://tailwindcss.com/) |
-| State Management | [Zustand](https://zustand-demo.pmnd.rs/) |
-| AI / Emotion Analysis | [Google Cloud Vertex AI](https://cloud.google.com/vertex-ai) (Gemini 1.5 Flash) |
-| Database & Auth | [Supabase](https://supabase.com/) (Postgres + Row Level Security) |
+| State | [Zustand](https://zustand-demo.pmnd.rs/) |
+| AI | [Google Cloud Vertex AI](https://cloud.google.com/vertex-ai) — Gemini 1.5 Flash |
+| Database | [Supabase](https://supabase.com/) |
 | Deployment | [Vercel](https://vercel.com/) |
-| Pixel Assets | [Cozy Valley](https://iclaimthisname.itch.io/cozy-valley) by iclaimthisname (premium) |
-| AI-Assisted Development | [Claude Code](https://claude.ai/claude-code) by Anthropic |
+| Pixel Art | [Cozy Valley](https://iclaimthisname.itch.io/cozy-valley) by iclaimthisname (premium) |
+| Dev Tooling | [Claude Code](https://claude.ai/claude-code) by Anthropic |
 
-> **Note on AI-assisted development:** Game architecture, UI polish, quest systems, audio management, and iterative feature development were built with the assistance of **Claude Code** — Anthropic's CLI coding agent. Claude Code was used throughout the development cycle for pair-programming, refactoring, and implementing complex game systems.
+We used **Claude Code** throughout — for game architecture, the quest system, audio management, UI polish, and a lot of the iteration in between. It felt like pair programming with someone who never gets tired.
 
 ---
 
@@ -141,12 +150,12 @@ mood/
 
 ---
 
-## Setup & Run Instructions
+## Setup & Running It Locally
 
 ### Prerequisites
 - Node.js 18+
-- A Supabase project (or skip — the game runs in guest mode without it)
-- Google Cloud project with Vertex AI enabled (or use `AI_MOCK_MODE=true`)
+- A Supabase project (totally optional — it runs fine without one)
+- A Google Cloud project with Vertex AI enabled (or just flip `AI_MOCK_MODE=true` and skip it entirely)
 
 ### 1. Clone the repository
 
@@ -161,49 +170,42 @@ cd Mood
 npm install
 ```
 
-### 3. Configure environment variables
+### 3. Set up environment variables
 
 ```bash
 cp .env.example .env.local
 ```
 
-Open `.env.local` and fill in your credentials:
+Then open `.env.local`. The only thing you need for a quick local run is:
 
 ```env
-# Supabase (optional — game works in guest mode without these)
+AI_MOCK_MODE=true
+```
+
+That's it. The game works fully without Supabase or Google Cloud. If you want the real AI and database, fill in the rest:
+
+```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
-# Google Cloud AI (optional — set AI_MOCK_MODE=true to skip)
 GOOGLE_CLOUD_PROJECT_ID=your-gcp-project-id
 GOOGLE_CLOUD_LOCATION=us-central1
 GOOGLE_VERTEX_MODEL=gemini-1.5-flash
 GOOGLE_APPLICATION_CREDENTIALS=./gcp-credentials.json
-
-# Set to true to use keyword heuristic instead of Vertex AI (great for local dev)
-AI_MOCK_MODE=true
 ```
 
 ### 4. Set up the database (optional)
 
-In your Supabase project SQL editor, run the contents of:
+If you're using Supabase, paste the contents of `database/schema.sql` into your project's SQL editor and run it.
 
-```
-database/schema.sql
-```
-
-### 5. Run the development server
+### 5. Start the dev server
 
 ```bash
 npm run dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-### 6. Play without any credentials
-
-The game works fully in guest mode. Just set `AI_MOCK_MODE=true` in `.env.local` and leave the Supabase variables empty — no account or cloud setup needed.
+Open [http://localhost:3000](http://localhost:3000) and click around — audio starts on first interaction.
 
 ---
 
@@ -234,23 +236,22 @@ The game works fully in guest mode. Just set `AI_MOCK_MODE=true` in `.env.local`
 
 ---
 
-## Credits & Assets
+## Credits
 
-- **Pixel Art:** [Cozy Valley](https://iclaimthisname.itch.io/cozy-valley) by iclaimthisname — premium license. Includes tilesets, character sprites, animals, farm props, and environment art.
-- **Music & SFX:** Royalty-free audio from [Mixkit](https://mixkit.co/) under the Mixkit License.
-- **AI Development Tooling:** [Claude Code](https://claude.ai/claude-code) by Anthropic — used for game system architecture, UI implementation, audio management, quest wiring, and iterative development throughout the project.
+- **Pixel art** — [Cozy Valley](https://iclaimthisname.itch.io/cozy-valley) by iclaimthisname, premium license. Tilesets, characters, animals, props, and all environment art.
+- **Music & ambient** — [Mixkit](https://mixkit.co/) royalty-free library (Forest Mist Whispers, Nap Time, Nature Meditation).
+- **Sound effects** — [SoundBible](https://soundbible.com/) (Temple Bell, Computer Magic) under CC and Public Domain licenses.
+- **AI dev tooling** — [Claude Code](https://claude.ai/claude-code) by Anthropic.
 
 ---
 
 ## Team
 
-| Name | University | Role |
-|---|---|---|
-| Hailey Cheng | City University of Hong Kong (CityUHK) | Full-stack, Game Design, AI Integration |
-| Rabin Sarki | Hong Kong University of Science and Technology (HKUST) | Full-stack, Game Engine, Backend |
+**Victoria Sister Fans Club**
 
-**Team Name:** Victoria Sister Fans Club
+- Hailey Cheng — City University of Hong Kong (CityUHK)
+- Rabin Sarki — Hong Kong University of Science and Technology (HKUST)
 
 ---
 
-*Built with care at a hackathon. Mood is a reminder that your feelings deserve a garden.*
+*Built at a hackathon. Your feelings deserve a garden.*

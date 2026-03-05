@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { aiAnalyze } from '@/lib/ai'
 import { createClient } from '@supabase/supabase-js'
 
+function isDbConfigured(): boolean {
+  return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY)
+}
+
 function getServiceClient() {
   return createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -16,8 +20,18 @@ export async function GET(req: NextRequest) {
   const userId = searchParams.get('userId')
 
   if (action === 'gardenState' && userId) {
-    const supabase = getServiceClient()
+    if (!isDbConfigured()) {
+      return NextResponse.json({
+        user_id: userId,
+        last_active: new Date().toISOString(),
+        streak: 0,
+        weather_state: 'sunshine',
+        unlocked_items: [],
+        growth_boost_until: null,
+      })
+    }
 
+    const supabase = getServiceClient()
     const { data: existing } = await supabase
       .from('garden_state')
       .select('*')
@@ -26,7 +40,6 @@ export async function GET(req: NextRequest) {
 
     if (existing) return NextResponse.json(existing)
 
-    // Create default
     const defaults = {
       user_id: userId,
       last_active: new Date().toISOString(),
@@ -52,14 +65,30 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'text is required' }, { status: 400 })
     }
 
-    // Analyze emotion
     const result = await aiAnalyze(text)
 
-    // If saving is requested (separate call from JournalModal)
+    // No DB configured — return analysis + a synthetic local plant so the game still works
+    if (!isDbConfigured()) {
+      if (savePlant && plantType && tileX !== undefined && tileY !== undefined) {
+        const plant = {
+          id: `local_${Date.now()}`,
+          user_id: userId || 'guest',
+          tile_x: tileX,
+          tile_y: tileY,
+          plant_type: plantType,
+          stage: 0,
+          planted_at: new Date().toISOString(),
+          last_updated: new Date().toISOString(),
+        }
+        return NextResponse.json({ ...result, plant })
+      }
+      return NextResponse.json(result)
+    }
+
+    // DB-backed path
     if (savePlant && userId && plantType && tileX !== undefined && tileY !== undefined) {
       const supabase = getServiceClient()
 
-      // Save journal entry
       await supabase.from('journal_entries').insert({
         user_id: userId,
         text,
@@ -70,7 +99,6 @@ export async function POST(req: NextRequest) {
         created_at: new Date().toISOString(),
       })
 
-      // Save plant
       const now = new Date().toISOString()
       const { data: plant, error: plantErr } = await supabase
         .from('plants')
@@ -86,11 +114,8 @@ export async function POST(req: NextRequest) {
         .select()
         .single()
 
-      if (plantErr) {
-        console.error('Plant save error:', plantErr)
-      }
+      if (plantErr) console.error('Plant save error:', plantErr)
 
-      // Update garden state: streak, entry count, unlocks
       const { data: gardenState } = await supabase
         .from('garden_state')
         .select('streak, unlocked_items')
@@ -98,7 +123,6 @@ export async function POST(req: NextRequest) {
         .single()
 
       if (gardenState) {
-        // Count entries for unlock check
         const { count } = await supabase
           .from('journal_entries')
           .select('*', { count: 'exact', head: true })
@@ -111,21 +135,15 @@ export async function POST(req: NextRequest) {
 
         await supabase
           .from('garden_state')
-          .update({
-            last_active: now,
-            streak: (gardenState.streak || 0) + 1,
-            unlocked_items: allUnlocks,
-          })
+          .update({ last_active: now, streak: (gardenState.streak || 0) + 1, unlocked_items: allUnlocks })
           .eq('user_id', userId)
       }
 
       return NextResponse.json({ ...result, plant: plant || null })
     }
 
-    // Just analysis
-    if (userId && !savePlant) {
+    if (userId && userId !== 'guest' && !savePlant) {
       const supabase = getServiceClient()
-      // Save the journal entry even without plant (if no savePlant flag, just analyze)
       try {
         await supabase.from('journal_entries').insert({
           user_id: userId,

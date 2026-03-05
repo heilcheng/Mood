@@ -7,7 +7,7 @@ import { GlassModal } from '@/components/ui/GlassModal'
 import { GlassPanel } from '@/components/ui/GlassPanel'
 import { AvatarSelector } from '@/components/game/AvatarSelector'
 import { SettingsModal } from './SettingsModal'
-import { createClient } from '@/lib/supabase'
+import { createClient, isSupabaseConfigured } from '@/lib/supabase'
 import { useGameStore } from '@/lib/gameStore'
 import type { AvatarChoice } from '@/lib/types'
 
@@ -23,8 +23,14 @@ export function MainMenu() {
   const [authLoading, setAuthLoading] = useState(false)
   const [authMessage, setAuthMessage] = useState<string | null>(null)
   const [checkingSession, setCheckingSession] = useState(true)
+  const supabaseEnabled = isSupabaseConfigured()
 
   useEffect(() => {
+    if (!supabaseEnabled) {
+      setCheckingSession(false)
+      return
+    }
+
     const supabase = createClient()
 
     supabase.auth.getSession().then(({ data }) => {
@@ -45,19 +51,17 @@ export function MainMenu() {
     })
 
     return () => subscription.unsubscribe()
-  }, [setUserId, setDisplayName])
+  }, [supabaseEnabled, setUserId, setDisplayName])
 
   const handleSignIn = async () => {
     if (!email.trim()) return
     setAuthLoading(true)
     setAuthMessage(null)
-
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: { emailRedirectTo: `${window.location.origin}/game` },
     })
-
     setAuthLoading(false)
     if (error) {
       setAuthMessage(`Error: ${error.message}`)
@@ -68,10 +72,6 @@ export function MainMenu() {
 
   const handleStartGame = (avatar: AvatarChoice) => {
     setAvatar(avatar)
-    router.push('/game')
-  }
-
-  const handleContinue = () => {
     router.push('/game')
   }
 
@@ -92,9 +92,8 @@ export function MainMenu() {
 
   return (
     <div className="min-h-screen relative overflow-hidden bg-gradient-to-b from-sky-200 via-sky-100 to-sage-100">
-      {/* Animated background elements */}
+      {/* Animated background */}
       <div className="absolute inset-0 pointer-events-none">
-        {/* Clouds */}
         {[0, 1, 2].map((i) => (
           <div
             key={i}
@@ -108,11 +107,8 @@ export function MainMenu() {
             }}
           />
         ))}
-        {/* Sun */}
         <div className="absolute top-8 right-12 w-16 h-16 bg-yellow-300/80 rounded-full animate-pulse-soft shadow-lg" />
-        {/* Grass bottom */}
         <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-sage-400/60 to-transparent" />
-        {/* Decorative flowers */}
         {['🌻', '🌼', '🌷', '🌸'].map((f, i) => (
           <div
             key={i}
@@ -130,7 +126,6 @@ export function MainMenu() {
 
       {/* Main content */}
       <div className="relative z-10 flex flex-col items-center justify-center min-h-screen p-6">
-        {/* Title */}
         <div className="text-center mb-12">
           <h1
             className="text-6xl font-bold text-sage-800 mb-3 drop-shadow-lg font-sans"
@@ -143,59 +138,45 @@ export function MainMenu() {
           </p>
         </div>
 
-        {/* Auth panel */}
         <GlassPanel className="p-8 w-full max-w-sm space-y-4">
-          {session ? (
+          {/* Signed-in state (Supabase only) */}
+          {supabaseEnabled && session ? (
             <>
               <p className="text-white/80 text-sm text-center">
                 Welcome back, {session.user.email?.split('@')[0] || 'Farmer'}!
               </p>
-
               <GlassButton className="w-full" size="lg" onClick={() => setMenuState('avatar')}>
                 Start New Garden
               </GlassButton>
-
-              <GlassButton className="w-full" variant="secondary" size="lg" onClick={handleContinue}>
+              <GlassButton className="w-full" variant="secondary" size="lg" onClick={() => router.push('/game')}>
                 Continue Farm
               </GlassButton>
-
               <div className="flex gap-3">
-                <GlassButton
-                  className="flex-1"
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setMenuState('settings')}
-                >
+                <GlassButton className="flex-1" variant="secondary" size="sm" onClick={() => setMenuState('settings')}>
                   Settings
                 </GlassButton>
-                <GlassButton
-                  className="flex-1"
-                  variant="danger"
-                  size="sm"
-                  onClick={handleSignOut}
-                >
+                <GlassButton className="flex-1" variant="danger" size="sm" onClick={handleSignOut}>
                   Sign Out
                 </GlassButton>
               </div>
             </>
           ) : (
             <>
-              <p className="text-white/80 text-sm text-center mb-2">
-                Sign in to save your garden across devices.
-              </p>
-
-              <GlassButton className="w-full" size="lg" onClick={() => setMenuState('signin')}>
-                Sign In / Sign Up
+              {/* Guest / no-Supabase state */}
+              <GlassButton className="w-full" size="lg" onClick={() => setMenuState('avatar')}>
+                Start Farming
               </GlassButton>
 
-              <GlassButton
-                className="w-full"
-                variant="secondary"
-                size="lg"
-                onClick={() => setMenuState('avatar')}
-              >
-                Play as Guest
-              </GlassButton>
+              {supabaseEnabled && (
+                <GlassButton
+                  className="w-full"
+                  variant="secondary"
+                  size="lg"
+                  onClick={() => setMenuState('signin')}
+                >
+                  Sign In to Save Progress
+                </GlassButton>
+              )}
 
               <GlassButton
                 variant="secondary"
@@ -205,25 +186,23 @@ export function MainMenu() {
               >
                 Settings
               </GlassButton>
+
+              {!supabaseEnabled && (
+                <p className="text-white/40 text-xs text-center pt-1">
+                  Running in local mode — progress saved in-session only
+                </p>
+              )}
             </>
           )}
         </GlassPanel>
 
-        <p className="mt-6 text-sage-700/50 text-xs">
-          A cozy space to grow.
-        </p>
+        <p className="mt-6 text-sage-700/50 text-xs">A cozy space to grow.</p>
       </div>
 
       {/* Sign In Modal */}
-      <GlassModal
-        isOpen={menuState === 'signin'}
-        onClose={() => setMenuState('main')}
-        title="Welcome to Mindful Farm"
-      >
+      <GlassModal isOpen={menuState === 'signin'} onClose={() => setMenuState('main')} title="Welcome to Mindful Farm">
         <div className="space-y-4">
-          <p className="text-white/80 text-sm">
-            Enter your email to receive a magic sign-in link. No password needed.
-          </p>
+          <p className="text-white/80 text-sm">Enter your email to receive a magic sign-in link.</p>
           <input
             type="email"
             value={email}
@@ -231,42 +210,26 @@ export function MainMenu() {
             onKeyDown={(e) => e.key === 'Enter' && handleSignIn()}
             placeholder="your@email.com"
             className="w-full bg-white/10 border border-white/20 rounded-xl px-4 py-3
-              text-white placeholder-white/40 text-sm
-              focus:outline-none focus:border-white/40"
+              text-white placeholder-white/40 text-sm focus:outline-none focus:border-white/40"
           />
           {authMessage && (
             <p className={`text-sm ${authMessage.startsWith('Error') ? 'text-blush-300' : 'text-sage-300'}`}>
               {authMessage}
             </p>
           )}
-          <GlassButton
-            className="w-full"
-            onClick={handleSignIn}
-            disabled={authLoading || !email.trim()}
-          >
+          <GlassButton className="w-full" onClick={handleSignIn} disabled={authLoading || !email.trim()}>
             {authLoading ? 'Sending...' : 'Send Magic Link'}
           </GlassButton>
         </div>
       </GlassModal>
 
-      {/* Avatar Selector Modal */}
-      <GlassModal
-        isOpen={menuState === 'avatar'}
-        onClose={() => setMenuState('main')}
-        title="Choose Your Farmer"
-        maxWidth="max-w-md"
-      >
-        <AvatarSelector
-          onSelect={handleStartGame}
-          current="farmer_girl"
-        />
+      {/* Avatar Selector */}
+      <GlassModal isOpen={menuState === 'avatar'} onClose={() => setMenuState('main')} title="Choose Your Farmer" maxWidth="max-w-md">
+        <AvatarSelector onSelect={handleStartGame} current="farmer_girl" />
       </GlassModal>
 
-      {/* Settings Modal */}
-      <SettingsModal
-        isOpen={menuState === 'settings'}
-        onClose={() => setMenuState('main')}
-      />
+      {/* Settings */}
+      <SettingsModal isOpen={menuState === 'settings'} onClose={() => setMenuState('main')} />
     </div>
   )
 }

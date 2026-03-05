@@ -3,13 +3,17 @@ import { generateWeeklySummary } from '@/lib/ai'
 import { createClient } from '@supabase/supabase-js'
 import type { JournalEntry } from '@/lib/types'
 
+function isDbConfigured(): boolean {
+  return !!(process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY)
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
     let { entries, userId } = body
 
-    // If userId provided but no entries, fetch from DB
-    if (userId && (!entries || entries.length === 0)) {
+    // Fetch from DB only when configured and entries weren't passed in
+    if (isDbConfigured() && userId && userId !== 'guest' && (!entries || entries.length === 0)) {
       const supabase = createClient(
         process.env.NEXT_PUBLIC_SUPABASE_URL!,
         process.env.SUPABASE_SERVICE_ROLE_KEY!

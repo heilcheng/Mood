@@ -7,6 +7,46 @@ import { GlassButton } from '@/components/ui/GlassButton'
 import { MOOD_EMOJI } from '@/lib/types'
 import type { EmotionAnalysis, Mood } from '@/lib/types'
 
+// ── Mood-based local reflections ──────────────────────────────────────────────
+const MOOD_REFLECTIONS: Record<Mood, string[]> = {
+  happy: [
+    "Your entries radiate warmth lately 🌻 — joy isn't random, it's something you've been tending to. Keep noticing what lights you up.",
+    "There's a gentle brightness in your recent reflections. Joy is a signal — what small moments have been feeding it? Hold onto those.",
+    "Happiness has been showing up in your garden. That's not luck — it's attention. You're noticing the good, and that makes it grow.",
+  ],
+  gratitude: [
+    "Gratitude keeps appearing in your words, like roots that hold the soil together 🌿. You have a gift for noticing abundance.",
+    "Your reflections carry a quiet thankfulness. Science shows that noticing what's good literally rewires your brain toward resilience.",
+    "There's a softness of appreciation in how you write. Gratitude isn't passive — it's an active choice you keep making. Beautiful.",
+  ],
+  calm: [
+    "A sense of stillness runs through your recent entries ☁️. You seem to be finding your footing. That inner quiet is worth protecting.",
+    "Calmness is the mood your garden seems to produce most. It suggests you're doing something right — keep creating that space.",
+    "Your reflections feel grounded and steady. Calm isn't always easy to reach — be proud that you're arriving there more often.",
+  ],
+  growth: [
+    "Your entries show someone who leans into discomfort as a teacher 🌱. That mindset of growth is rare and worth celebrating.",
+    "Growth keeps emerging in your garden. You're not just journaling — you're actively processing and becoming. That takes real courage.",
+    "There's a recurring theme of becoming in what you write. Keep asking 'what can I learn?' — your garden of self grows every time you do.",
+  ],
+  stressed: [
+    "Stress has been a frequent visitor lately 💨. That's okay — your willingness to name it here is already a powerful act of self-care.",
+    "You've been carrying a lot. Your reflections show someone who is aware, which is the first step. What's one small thing you can release today?",
+    "Stress tends to narrow our view. Your journal is widening it again. Try to notice: amidst the pressure, what small comfort exists right now?",
+  ],
+  crisis: [
+    "It sounds like you've been going through something really heavy 💙. Please be gentle with yourself. You don't have to have it all figured out.",
+    "Your words carry real weight. You're not alone in this. Reaching out — to a friend, a helpline, or even to this page — is strength, not weakness.",
+    "Hard emotions deserve space, not suppression. You're giving them that here. Take one breath, one moment, one small act of self-kindness today.",
+  ],
+}
+
+// Pick a deterministic-random reflection (based on entry count so it changes as you journal)
+function pickReflection(mood: Mood, seed: number): string {
+  const pool = MOOD_REFLECTIONS[mood]
+  return pool[seed % pool.length]
+}
+
 // ── Mood color maps ───────────────────────────────────────────────────────────
 const MOOD_DOT_COLOR: Record<Mood, string> = {
   happy: 'bg-yellow-400',
@@ -182,7 +222,6 @@ export function DailyRecordModal() {
   const [loadingInsights, setLoadingInsights] = useState(false)
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const [insightsVisible, setInsightsVisible] = useState(false)
-
   const typedNarrative = useTypewriter(narrative)
 
   useEffect(() => {
@@ -239,6 +278,12 @@ export function DailyRecordModal() {
       tags: [],
     } as EmotionAnalysis
   }, [analysis, localEntries])
+
+  // Pre-compute dominant + total so we can use them in hooks below the early return guard
+  const preTotal = effectiveAnalysis?.totalEntries ?? 0
+  const preDominant = effectiveAnalysis?.dominantMood ?? null
+  const localReflectionRaw = preDominant && preTotal > 0 ? pickReflection(preDominant, entryCount) : null
+  const typedLocalReflection = useTypewriter(localReflectionRaw)
 
   if (!dailyRecordOpen) return null
 
@@ -404,8 +449,14 @@ export function DailyRecordModal() {
                   {typedNarrative}
                   <span className="inline-block w-0.5 h-4 bg-white/60 ml-0.5 align-middle animate-pulse" />
                 </p>
+              ) : dominant && total > 0 ? (
+                // Local mood-based reflection — works for guests without API
+                <p className="text-white/85 text-sm leading-relaxed">
+                  {typedLocalReflection}
+                  <span className="inline-block w-0.5 h-4 bg-white/60 ml-0.5 align-middle animate-pulse" />
+                </p>
               ) : (
-                <p className="text-white/40 text-sm italic">Write a few more entries to unlock your personal narrative.</p>
+                <p className="text-white/40 text-sm italic">Write a few more entries to unlock your personal reflection.</p>
               )}
             </div>
           </div>

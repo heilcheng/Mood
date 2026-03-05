@@ -45,7 +45,7 @@ export function GlassModal({
       <div
         className={`
           relative ${maxWidth} w-full
-          backdrop-blur-xl bg-white/25 border border-white/40
+          backdrop-blur-xl bg-white/40 border border-white/50
           rounded-3xl shadow-2xl
           animate-slideUp
           p-6
@@ -53,10 +53,10 @@ export function GlassModal({
       >
         {title && (
           <div className="flex items-center justify-between mb-5">
-            <h2 className="text-xl font-bold text-white font-sans drop-shadow">{title}</h2>
+            <h2 className="text-xl font-bold text-amber-900 font-sans drop-shadow">{title}</h2>
             <button
               onClick={onClose}
-              className="w-8 h-8 flex items-center justify-center rounded-full bg-white/20 hover:bg-white/30 text-white transition-colors"
+              className="w-8 h-8 flex items-center justify-center rounded-full bg-amber-100/60 hover:bg-amber-100/90 text-amber-900 transition-colors"
             >
               x
             </button>

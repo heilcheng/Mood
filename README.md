@@ -6,57 +6,50 @@
 
 ## What is Mood?
 
-Mood is a cozy pixel art farming game where your garden grows from how you feel. Write a reflection in the Journal House, and AI reads the emotional tone — then a plant sprouts in your garden that matches it. Come back the next day and you'll see a little more colour than before.
+Mood is a cozy pixel art farming game that helps you manage stress, stay emotionally balanced, and build a healthier relationship with technology — by turning daily journaling into something you actually want to do.
 
-We built it because journaling can feel like homework, and we wanted it to feel like tending something alive instead.
-
----
-
-## Inspiration
-
-We grew up playing Stardew Valley and Animal Crossing during stressful periods, and noticed how much a quiet game loop could calm the mind. We wondered: what if the game itself *was* the reflection? What if writing honestly about your day was the same act as planting a seed?
-
-That idea became Mood.
+Write a reflection in the Journal House. AI reads the emotional tone and grows a plant in your garden that matches how you're feeling. Come back the next day and the garden will have grown a little more. Over time it becomes a quiet, living record of your inner life.
 
 ---
 
-## What It Does
+## The Problem
 
-You explore a small farm — walk to the barn to write in your journal, visit the duck pond for breathing exercises, talk to the NPCs. Each time you write, Google Cloud AI picks up on your emotional tone and grows a different plant: sunflowers for happy days, lavender when you're stressed, lotus for calm, daisies for gratitude. Over time your garden becomes a quiet picture of your emotional life.
+Stress, emotional imbalance, and screen fatigue are real and daily. The tools that exist to help — journaling apps, mindfulness timers, mood trackers — often feel clinical and transactional. People use them for a week, then stop. There's no reason to return.
+
+We believe that's a design problem, not a habit problem.
+
+**Mood** wraps the same healthy practices inside a cozy game world. Reflecting on your day feels like planting something. Breathing exercises happen by a quiet duck pond. The garden that grows is yours — shaped by your actual emotional patterns, not a generic progress bar.
+
+The result is a tool for psychological well-being that you come back to because you want to, not because you scheduled a reminder.
 
 ---
 
-## Key Features
+## How It Supports Well-Being
 
-### 🌱 AI Emotional Journaling
-Write a short reflection inside the Journal House. Gemini reads the tone, picks a mood, and grows a matching plant in your garden. Five moods, five plant types, one growing garden.
+### 🌱 Emotional Journaling That Feels Natural
+Write freely inside the Journal House. Gemini reads your emotional tone — happiness, calm, stress, gratitude, growth — and a matching plant appears in your garden. No categories to select, no ratings to submit. Just writing.
 
-### 🌸 A Garden That's Yours
-- Happy → Sunflowers
-- Grateful → Daisies
+### 🌸 A Garden That Reflects Your Mind
+Your garden is a visual record of your emotional patterns over time:
+- Happy days → Sunflowers
+- Gratitude → Daisies
 - Calm → Lotus flowers
-- Stressed → Lavender
-- Growing → Oak saplings
+- Stress → Lavender
+- Personal growth → Oak saplings
 
-Plants go from seed to full bloom as your entries build up.
+Plants grow from seed to full bloom as your entries build up, so the garden always tells a real story.
 
-### 🐮 A Farm Worth Exploring
-Walk around using WASD, chat with NPCs, discover the pond and the garden plots, and pick your avatar. It's deliberately unhurried.
+### 🧘 Mindfulness Woven Into the World
+Box breathing, body scan, and a 5-senses grounding exercise are built into the farm — not hidden behind a menu, but places you walk to. The pond is where you breathe. The world slows down when you're there.
 
-### 🧘 Mindfulness at the Pond
-Box breathing, body scan, and a 5-senses exercise — all tucked into the world naturally, not behind a separate menu.
+### 🤖 Gentle AI Reflection
+After enough journal entries, the game summarises your emotional week in a short, supportive paragraph — written by Gemini, never preachy. Just a gentle mirror.
 
-### 🤖 Weekly Reflection
-After enough entries the game generates a short AI reflection on your emotional week — patterns you might not have noticed, written gently.
+### 🌿 It Rewards Stepping Away
+Plants grow a little faster when you return after a real break. The game is designed to reward presence, not screen time. A healthier tech-life boundary built into the loop itself.
 
-### 🌿 It Rewards Rest
-Plants grow a little faster when you return after a break. The game is genuinely happier when you step away.
-
----
-
-## The Problem We Were Solving
-
-Most mental health apps feel clinical. You open them, log a number, close them. The habit doesn't stick because there's nothing to come back *for*. We wanted the act of reflection to feel like something you tend — something that grows — so returning felt natural rather than obligatory.
+### 🐮 A World Worth Coming Back To
+There are NPCs to talk to, quests to follow, and a farm to explore at your own pace. The cozy game layer isn't decoration — it's what makes the well-being practices feel worth returning to every day.
 
 ---
 
@@ -239,7 +232,7 @@ Open [http://localhost:3000](http://localhost:3000) and click around — audio s
 ## Credits
 
 - **Pixel art** — [Cozy Valley](https://iclaimthisname.itch.io/cozy-valley) by iclaimthisname, premium license. Tilesets, characters, animals, props, and all environment art.
-- **Music & ambient** — [Mixkit](https://mixkit.co/) royalty-free library (Forest Mist Whispers, Nap Time, Nature Meditation).
+- **Music & ambient** — Cozy piano farm theme (day BGM); [Mixkit](https://mixkit.co/) royalty-free library (Nap Time for night, Nature Meditation for ambient).
 - **Sound effects** — [SoundBible](https://soundbible.com/) (Temple Bell, Computer Magic) under CC and Public Domain licenses.
 - **AI dev tooling** — [Claude Code](https://claude.ai/claude-code) by Anthropic.
 

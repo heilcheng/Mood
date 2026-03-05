@@ -48,7 +48,7 @@ export function GlassModal({
           backdrop-blur-xl bg-white/40 border border-white/50
           rounded-3xl shadow-2xl
           animate-slideUp
-          p-6
+          p-4 md:p-6
         `}
       >
         {title && (

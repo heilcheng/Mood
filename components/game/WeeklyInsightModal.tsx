@@ -196,21 +196,21 @@ export function WeeklyInsightModal() {
         <div className={`space-y-5 transition-all duration-700 ${revealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
 
           {/* Streak & Entries header */}
-          <div className="flex gap-3">
-            <div className="flex-1 bg-amber-500/20 border border-amber-400/40 rounded-2xl p-4 flex flex-col items-center text-center shadow-inner">
-              <span className="text-3xl mb-1">🔥</span>
-              <p className="text-white font-bold text-xl">{streak}</p>
-              <p className="text-amber-100/80 text-[10px] font-semibold uppercase tracking-wider">Day Streak</p>
+          <div className="flex gap-2 md:gap-3">
+            <div className="flex-1 bg-amber-500/20 border border-amber-400/40 rounded-xl md:rounded-2xl p-2 md:p-4 flex flex-col items-center text-center shadow-inner">
+              <span className="text-xl md:text-3xl mb-1">🔥</span>
+              <p className="text-white font-bold text-base md:text-xl">{streak}</p>
+              <p className="text-amber-100/80 text-[8px] md:text-[10px] font-semibold uppercase tracking-wider">Day Streak</p>
             </div>
-            <div className="flex-1 bg-emerald-500/20 border border-emerald-400/40 rounded-2xl p-4 flex flex-col items-center text-center shadow-inner">
-              <span className="text-3xl mb-1">📝</span>
-              <p className="text-white font-bold text-xl">{totalMoodEntries}</p>
-              <p className="text-emerald-100/80 text-[10px] font-semibold uppercase tracking-wider">This Week</p>
+            <div className="flex-1 bg-emerald-500/20 border border-emerald-400/40 rounded-xl md:rounded-2xl p-2 md:p-4 flex flex-col items-center text-center shadow-inner">
+              <span className="text-xl md:text-3xl mb-1">📝</span>
+              <p className="text-white font-bold text-base md:text-xl">{totalMoodEntries}</p>
+              <p className="text-emerald-100/80 text-[8px] md:text-[10px] font-semibold uppercase tracking-wider">This Week</p>
             </div>
-            <div className="flex-1 bg-indigo-500/20 border border-indigo-400/40 rounded-2xl p-4 flex flex-col items-center text-center shadow-inner">
-              <span className="text-3xl mb-1">🌈</span>
-              <p className="text-white font-bold text-xl">{moodTags.length}</p>
-              <p className="text-indigo-100/80 text-[10px] font-semibold uppercase tracking-wider">Moods Felt</p>
+            <div className="flex-1 bg-indigo-500/20 border border-indigo-400/40 rounded-xl md:rounded-2xl p-2 md:p-4 flex flex-col items-center text-center shadow-inner">
+              <span className="text-xl md:text-3xl mb-1">🌈</span>
+              <p className="text-white font-bold text-base md:text-xl">{moodTags.length}</p>
+              <p className="text-indigo-100/80 text-[8px] md:text-[10px] font-semibold uppercase tracking-wider">Moods Felt</p>
             </div>
           </div>
 

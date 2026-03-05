@@ -11,6 +11,7 @@ import { TutorialOverlay } from '@/components/game/TutorialOverlay'
 import { AvatarPickerOverlay } from '@/components/game/AvatarPickerOverlay'
 import { DialogOverlay } from '@/components/game/DialogOverlay'
 import { SettingsModal } from '@/components/menu/SettingsModal'
+import { MobileControls } from '@/components/game/MobileControls'
 import { createClient, isSupabaseConfigured } from '@/lib/supabase'
 import { useGameStore } from '@/lib/gameStore'
 import { GardenSystem } from '@/game/systems/GardenSystem'
@@ -145,6 +146,7 @@ export default function GamePage() {
         <DailyRecordModal />
         <SettingsModal isOpen={settingsOpen} onClose={closeSettings} />
         <DialogOverlay />
+        <MobileControls />
 
         {/* Avatar picker is shown first; tutorial appears after */}
         <AvatarPickerOverlay />

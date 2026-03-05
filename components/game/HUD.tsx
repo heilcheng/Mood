@@ -59,8 +59,8 @@ export function HUD() {
           <button
             onClick={openDailyRecord}
             title="Daily Record"
-            className="bg-black/40 border border-white/20 shadow-xl text-base
-              w-9 h-9 rounded-xl flex items-center justify-center
+            className="bg-black/40 border border-white/20 shadow-xl text-sm md:text-base
+              w-8 h-8 md:w-9 md:h-9 rounded-xl flex items-center justify-center
               hover:bg-white/10 transition-all"
             style={{ backdropFilter: 'blur(16px)' }}
           >
@@ -70,8 +70,8 @@ export function HUD() {
             <button
               onClick={() => openWeeklyInsight([])}
               title="Weekly Insight"
-              className="bg-black/40 border border-white/30 shadow-xl text-base
-                w-9 h-9 rounded-xl flex items-center justify-center
+              className="bg-black/40 border border-white/30 shadow-xl text-sm md:text-base
+                w-8 h-8 md:w-9 md:h-9 rounded-xl flex items-center justify-center
                 hover:bg-white/10 transition-all animate-pulse-soft"
               style={{ backdropFilter: 'blur(16px)' }}
             >
@@ -81,8 +81,8 @@ export function HUD() {
           <button
             onClick={openSettings}
             title="Settings"
-            className="bg-black/40 border border-white/20 shadow-xl text-base
-              w-9 h-9 rounded-xl flex items-center justify-center
+            className="bg-black/40 border border-white/20 shadow-xl text-sm md:text-base
+              w-8 h-8 md:w-9 md:h-9 rounded-xl flex items-center justify-center
               hover:bg-white/10 transition-all"
             style={{ backdropFilter: 'blur(16px)' }}
           >
@@ -119,9 +119,9 @@ export function HUD() {
 
       {/* Bottom-right: quest tracker with progress */}
       {activeQuests.length > 0 && (
-        <div className="absolute bottom-4 right-4 z-10">
-          <div className="bg-black/40 border border-white/20 rounded-2xl shadow-xl p-3 min-w-52">
-            <p className="text-sm font-bold text-white/90 mb-2 uppercase tracking-wide">Quests</p>
+        <div className="absolute top-4 right-16 md:bottom-4 md:right-4 md:top-auto z-10 w-40 md:w-auto">
+          <div className="bg-black/40 border border-white/20 rounded-2xl shadow-xl p-2 md:p-3 md:min-w-52 backdrop-blur-md">
+            <p className="text-[10px] md:text-sm font-bold text-white/90 mb-1 md:mb-2 uppercase tracking-wide">Quests</p>
             <div className="flex flex-col gap-2">
               {activeQuests.map((q) => {
                 const target = questTargetMap[q.quest_key] ?? 1
@@ -167,7 +167,7 @@ export function HUD() {
       )}
 
       {/* Controls hint — bottom pill */}
-      <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
+      <div className="hidden md:block absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
         <div className="bg-black/40 border border-white/15 rounded-full shadow px-4 py-1"
           style={{ backdropFilter: 'blur(12px)' }}>
           <p className="text-sm text-white/60 font-medium">J = Journal &nbsp;|&nbsp; WASD/Arrows = Move &nbsp;|&nbsp; E = Interact</p>

@@ -240,9 +240,9 @@ export function BreathingOverlay() {
         {/* ── STAGE: SELECT ──────────────────────────────────────────────── */}
         {stage === 'select' && (
           <div className="space-y-6 animate-fadeIn">
-            <div className="text-center mb-10">
-              <h2 className="text-3xl text-white font-light tracking-wide mb-3">Mindful Moment</h2>
-              <p className="text-white/60 text-sm">Choose a practice to center yourself.</p>
+            <div className="text-center mb-6 md:mb-10">
+              <h2 className="text-2xl md:text-3xl text-white font-light tracking-wide mb-2 md:mb-3">Mindful Moment</h2>
+              <p className="text-white/60 text-xs md:text-sm">Choose a practice to center yourself.</p>
             </div>
             <div className="space-y-3">
               {ACTIVITIES.map(a => (

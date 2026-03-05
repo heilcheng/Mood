@@ -109,6 +109,7 @@ export class Player extends Phaser.GameObjects.Container {
   move(
     cursors: Phaser.Types.Input.Keyboard.CursorKeys,
     wasd: { up: Phaser.Input.Keyboard.Key; down: Phaser.Input.Keyboard.Key; left: Phaser.Input.Keyboard.Key; right: Phaser.Input.Keyboard.Key },
+    mobileInputs: { up: boolean; down: boolean; left: boolean; right: boolean },
     _delta: number,
     speed = 80
   ): void {
@@ -118,11 +119,11 @@ export class Player extends Phaser.GameObjects.Container {
 
     let vx = 0, vy = 0
 
-    if (cursors.left.isDown  || wasd.left.isDown)  { vx = -actualSpeed; this.facing = 'left'  }
-    else if (cursors.right.isDown || wasd.right.isDown) { vx =  actualSpeed; this.facing = 'right' }
+    if (cursors.left.isDown || wasd.left.isDown || mobileInputs.left) { vx = -actualSpeed; this.facing = 'left' }
+    else if (cursors.right.isDown || wasd.right.isDown || mobileInputs.right) { vx = actualSpeed; this.facing = 'right' }
 
-    if (cursors.up.isDown   || wasd.up.isDown)   { vy = -actualSpeed; this.facing = 'up'   }
-    else if (cursors.down.isDown  || wasd.down.isDown)  { vy =  actualSpeed; this.facing = 'down'  }
+    if (cursors.up.isDown || wasd.up.isDown || mobileInputs.up) { vy = -actualSpeed; this.facing = 'up' }
+    else if (cursors.down.isDown || wasd.down.isDown || mobileInputs.down) { vy = actualSpeed; this.facing = 'down' }
 
     if (vx !== 0 && vy !== 0) { const f = 1 / Math.sqrt(2); vx *= f; vy *= f }
 
@@ -131,7 +132,7 @@ export class Player extends Phaser.GameObjects.Container {
     this.playAnim(this.isMoving ? 'walk' : 'idle', this.facing)
   }
 
-  addNearbyZone(id: string): void    { this.interactionZones.add(id) }
+  addNearbyZone(id: string): void { this.interactionZones.add(id) }
   removeNearbyZone(id: string): void { this.interactionZones.delete(id) }
   getNearestInteractable(): string | null {
     return this.interactionZones.size > 0 ? [...this.interactionZones][0] : null

@@ -11,6 +11,7 @@ type EventMap = {
 
   // React → Phaser
   plantAdded: Plant
+  journalCompleted: void
   weatherChanged: WeatherState
   growthBoost: void
   dayNightTick: { phase: 'day' | 'dusk' | 'night' }

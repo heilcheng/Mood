@@ -100,6 +100,7 @@ export function JournalModal() {
         incrementEntryCount()
         const today = new Date().toISOString().slice(0, 10)
         setLastJournalDate(today)
+        EventBridge.emit('journalCompleted', undefined as unknown as void)
 
         // Quest: first reflection
         const firstReflQ = quests.find(q => q.quest_key === 'first_reflection')
@@ -154,13 +155,13 @@ export function JournalModal() {
                 <button
                   key={m}
                   onClick={() => setSelectedMood(m)}
-                  className={`flex flex-col items-center justify-center p-2 rounded-xl transition-all w-[72px] h-[72px] border ${selectedMood === m
+                  className={`flex flex-col items-center justify-center p-1 md:p-2 rounded-xl transition-all w-14 h-14 md:w-[72px] md:h-[72px] border ${selectedMood === m
                     ? 'bg-white/30 border-white shadow-xl scale-105'
                     : 'bg-white/10 border-white/20 hover:bg-white/20'
                     }`}
                 >
-                  <span className="text-2xl mb-1">{emoji}</span>
-                  <span className="text-[10px] text-white/90 capitalize font-medium">{m}</span>
+                  <span className="text-xl md:text-2xl mb-1">{emoji}</span>
+                  <span className="text-[9px] md:text-[10px] text-white/90 capitalize font-medium">{m}</span>
                 </button>
               )
             })}
@@ -190,8 +191,8 @@ export function JournalModal() {
                   <button
                     key={i}
                     onClick={() => setText(text ? `${text}\n${p}` : p)}
-                    className="text-xs bg-white/15 hover:bg-white/25 border border-white/20
-                      rounded-full px-3 py-1 text-white/80 transition-colors"
+                    className="text-[10px] md:text-xs bg-white/15 hover:bg-white/25 border border-white/20
+                      rounded-full px-2 py-1 md:px-3 text-white/80 transition-colors"
                   >
                     {p}
                   </button>

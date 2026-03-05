@@ -5,6 +5,7 @@ import { PlantSprite } from '../objects/PlantSprite'
 import { WeatherSystem } from '../systems/WeatherSystem'
 import { DayNightSystem } from '../systems/DayNightSystem'
 import { EventBridge } from '../EventBridge'
+import { useGameStore } from '@/lib/gameStore'
 import { TERRAIN, WATER, SOIL, FENCE } from '../utils/CozyValleyLoader'
 import {
   TILE_SIZE, MAP_WIDTH, MAP_HEIGHT, MAP_DATA, TILES,
@@ -26,6 +27,7 @@ export class FarmScene extends Phaser.Scene {
   private dayNightSystem!: DayNightSystem
   private cursors!: Phaser.Types.Input.Keyboard.CursorKeys
   private wasd!: { up: Phaser.Input.Keyboard.Key; down: Phaser.Input.Keyboard.Key; left: Phaser.Input.Keyboard.Key; right: Phaser.Input.Keyboard.Key }
+  private mobileInputs = { up: false, down: false, left: false, right: false }
   private eKey!: Phaser.Input.Keyboard.Key
   private jKey!: Phaser.Input.Keyboard.Key
   private escKey!: Phaser.Input.Keyboard.Key
@@ -90,14 +92,10 @@ export class FarmScene extends Phaser.Scene {
 
     this.initialPlants.forEach((p) => this.spawnPlant(p))
 
-    // Render Pink Cherry tree reward if user already has journal entries
-    if (this.initialPlants.length > 0) {
-      const rewardTree = this.add.image(
-        6 * TILE_SIZE + TILE_SIZE / 2, // Inside garden
-        21 * TILE_SIZE + TILE_SIZE,
-        'tree_cherry'
-      )
-      rewardTree.setDepth(3).setOrigin(0.5, 1)
+    // Render Pink Cherry trees for each completed journal entry
+    const journalCount = useGameStore.getState().entryCount || useGameStore.getState().localEntries.length
+    for (let i = 0; i < journalCount; i++) {
+      this.spawnCherryTreeReward(i, false)
     }
 
     this.spawnDecorations(unlockedItems)
@@ -206,6 +204,39 @@ export class FarmScene extends Phaser.Scene {
       'fence_ss', frame
     )
     img.setDepth(2)
+  }
+
+  private spawnCherryTreeReward(index: number, animate = false): void {
+    // Top border of garden is Y=20. Garden stretches from X=14 to X=28.
+    // Grow trees along the top fence X=21, expanding outwards logic.
+    const startX = 21
+    const startY = 19
+    // Math pattern: 0, 1, -1, 2, -2, 3, -3...
+    const offset = Math.ceil(index / 2) * (index % 2 !== 0 ? 1 : -1)
+    // If they write > 15 entries, stack them a row higher
+    const row = Math.floor(index / 15)
+
+    const tx = startX + offset
+    const ty = startY - row
+
+    const rewardTree = this.add.image(
+      tx * TILE_SIZE + TILE_SIZE / 2,
+      ty * TILE_SIZE + TILE_SIZE,
+      'tree_cherry'
+    )
+    rewardTree.setDepth(3).setOrigin(0.5, 1)
+
+    if (animate) {
+      rewardTree.y -= 20
+      rewardTree.alpha = 0
+      this.tweens.add({
+        targets: rewardTree,
+        y: '+=20',
+        alpha: 1,
+        duration: 800,
+        ease: 'Bounce.easeOut'
+      })
+    }
   }
 
   // ─── Structures & Trees & Crops ────────────────────────────────────────────
@@ -428,9 +459,9 @@ export class FarmScene extends Phaser.Scene {
 
   private createNPCs(): void {
     const npcConfigs = [
-      { id: 'guide',    x: HOUSE_POSITION.x + 6, y: HOUSE_POSITION.y + 4, textureKey: 'char2', message: "Welcome to your Mindful Farm! Walk to the barn to write reflections, or visit the pond for breathing exercises.", patrolRadius: 30 },
-      { id: 'gardener', x: 29,                   y: 7,                     textureKey: 'char4', message: "Every feeling you write becomes a seed. Your garden grows with your heart!", patrolRadius: 20 },
-      { id: 'neighbor', x: 23,                   y: 16,                    textureKey: 'char5', message: "I've been tending this land for years. The secret? Show up, even on cloudy days.", patrolRadius: 40 },
+      { id: 'guide', x: HOUSE_POSITION.x + 6, y: HOUSE_POSITION.y + 4, textureKey: 'char2', message: "Welcome to your Mindful Farm! Walk to the barn to write reflections, or visit the pond for breathing exercises.", patrolRadius: 30 },
+      { id: 'gardener', x: 29, y: 7, textureKey: 'char4', message: "Every feeling you write becomes a seed. Your garden grows with your heart!", patrolRadius: 20 },
+      { id: 'neighbor', x: 23, y: 16, textureKey: 'char5', message: "I've been tending this land for years. The secret? Show up, even on cloudy days.", patrolRadius: 40 },
     ]
     npcConfigs.forEach((cfg) => {
       this.npcs.push(new NPC(this, {
@@ -504,32 +535,16 @@ export class FarmScene extends Phaser.Scene {
   private setupEventListeners(): void {
     // Journal / Plant creation
     const cleanPlantAdded = EventBridge.on('plantAdded', (plant) => {
-      // Pink Cherry tree reward purely for completing a journal (max 1)
-      if (this.plantSprites.size === 0) {
-        const rewardTree = this.add.image(
-          6 * TILE_SIZE + TILE_SIZE / 2, // Inside garden
-          21 * TILE_SIZE + TILE_SIZE,
-          'tree_cherry'
-        )
-        rewardTree.setDepth(3).setOrigin(0.5, 1)
-
-        // Drop-in bounce animation
-        rewardTree.y -= 20
-        rewardTree.alpha = 0
-        this.tweens.add({
-          targets: rewardTree,
-          y: '+=20',
-          alpha: 1,
-          duration: 800,
-          ease: 'Bounce.easeOut'
-        })
-      }
-
       const existing = [...this.plantSprites.values()].find(
         (s) => s.plantData.tile_x === plant.tile_x && s.plantData.tile_y === plant.tile_y
       )
       if (existing) existing.advanceStage()
       else this.spawnPlant(plant)
+    })
+
+    const cleanJournalCompleted = EventBridge.on('journalCompleted', () => {
+      const count = useGameStore.getState().entryCount || useGameStore.getState().localEntries.length
+      this.spawnCherryTreeReward(Math.max(0, count - 1), true)
     })
 
     const cleanWeather = EventBridge.on('weatherChanged', (weather: WeatherState) => {
@@ -552,7 +567,20 @@ export class FarmScene extends Phaser.Scene {
       this.scene.restart({ avatar, plants: this.initialPlants })
     })
 
-    this.eventCleanups.push(cleanPlantAdded, cleanWeather, cleanGrowth, cleanDayNight, cleanAvatarChanged)
+    // Listen to mobile custom events coming from React DOM
+    const handleMobileInput = (e: Event) => {
+      const ce = e as CustomEvent
+      if (ce.detail.type === 'dir') {
+        const dir = ce.detail.dir as keyof typeof this.mobileInputs
+        if (dir) this.mobileInputs[dir] = ce.detail.isDown
+      } else if (ce.detail.type === 'interact') {
+        if (ce.detail.isDown) this.handleInteract()
+      }
+    }
+    window.addEventListener('mobile-input', handleMobileInput)
+    const cleanMobileInputs = () => window.removeEventListener('mobile-input', handleMobileInput)
+
+    this.eventCleanups.push(cleanPlantAdded, cleanJournalCompleted, cleanWeather, cleanGrowth, cleanDayNight, cleanAvatarChanged, cleanMobileInputs)
   }
 
   private handleInteract(): void {
@@ -632,7 +660,7 @@ export class FarmScene extends Phaser.Scene {
 
   update(_time: number, delta: number): void {
     if (!this.player) return
-    this.player.move(this.cursors, this.wasd, delta)
+    this.player.move(this.cursors, this.wasd, this.mobileInputs, delta)
     this.npcs.forEach((npc) => npc.update(delta))
     this.dayNightSystem.update(delta)
     this.checkNearbyInteractables()

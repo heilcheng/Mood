@@ -235,8 +235,8 @@ const NPC_TITLES: Record<string, string> = {
 type VoiceProfile = { rate: number; pitch: number; preferFemale: boolean }
 
 const VOICE_PROFILES: Record<string, VoiceProfile> = {
-    guide:    { rate: 0.88, pitch: 1.10, preferFemale: true  }, // River: calm, warm
-    gardener: { rate: 0.95, pitch: 1.20, preferFemale: true  }, // Fern: cheerful, bright
+    guide: { rate: 0.88, pitch: 1.10, preferFemale: true }, // River: calm, warm
+    gardener: { rate: 0.95, pitch: 1.20, preferFemale: true }, // Fern: cheerful, bright
     neighbor: { rate: 0.82, pitch: 0.85, preferFemale: false }, // Silas: laid-back, deep
 }
 
@@ -247,7 +247,7 @@ function speakText(text: string, npcId: string) {
     const utterance = new SpeechSynthesisUtterance(text)
     const profile = VOICE_PROFILES[npcId] ?? { rate: 0.9, pitch: 1.0, preferFemale: true }
 
-    utterance.rate  = profile.rate
+    utterance.rate = profile.rate
     utterance.pitch = profile.pitch
     utterance.volume = 0.9
 
@@ -256,7 +256,7 @@ function speakText(text: string, npcId: string) {
     if (voices.length > 0) {
         const englishVoices = voices.filter(v => v.lang.startsWith('en'))
         const femaleKeywords = ['samantha', 'karen', 'moira', 'victoria', 'allison', 'susan', 'kate', 'fiona', 'tessa']
-        const maleKeywords   = ['daniel', 'alex', 'tom', 'james', 'fred', 'ralph', 'bruce', 'junior']
+        const maleKeywords = ['daniel', 'alex', 'tom', 'james', 'fred', 'ralph', 'bruce', 'junior']
         const keywords = profile.preferFemale ? femaleKeywords : maleKeywords
 
         const match = englishVoices.find(v => keywords.some(k => v.name.toLowerCase().includes(k)))
@@ -386,7 +386,7 @@ export function DialogOverlay() {
 
             {/* Dialog box */}
             <div
-                className="relative w-full max-w-2xl pointer-events-auto rounded-[32px] p-8 animate-slideUpFade shadow-2xl"
+                className="relative w-full max-w-2xl pointer-events-auto rounded-[24px] md:rounded-[32px] p-5 md:p-8 animate-slideUpFade shadow-2xl"
                 style={{
                     background: 'rgba(250, 246, 237, 0.95)',
                     border: '4px solid #8b7355',
@@ -407,8 +407,8 @@ export function DialogOverlay() {
                 </div>
 
                 {/* Text body */}
-                <div className="min-h-[90px] pt-4">
-                    <p className="text-2xl font-semibold text-[#4a3e2e] leading-relaxed">
+                <div className="min-h-[80px] md:min-h-[90px] pt-3 md:pt-4">
+                    <p className="text-lg md:text-2xl font-semibold text-[#4a3e2e] leading-relaxed">
                         {displayedText}
                         {isTyping && <span className="animate-pulse">▌</span>}
                     </p>
@@ -416,13 +416,13 @@ export function DialogOverlay() {
 
                 {/* Choices / Continue */}
                 {isComplete && (
-                    <div className="mt-8 flex flex-col gap-3 animate-fadeIn">
+                    <div className="mt-6 md:mt-8 flex flex-col gap-2 md:gap-3 animate-fadeIn">
                         {d.choices ? (
                             d.choices.map((c, i) => (
                                 <button
                                     key={i}
                                     onClick={() => handleNext(c.nextNode)}
-                                    className="px-6 py-3 rounded-xl bg-[#e3d8c5] hover:bg-[#d4c5a9] text-[#4a3e2e] font-bold text-lg border-2 border-[#bfae91] active:scale-95 transition-all text-left"
+                                    className="px-4 py-2 md:px-6 md:py-3 rounded-xl bg-[#e3d8c5] hover:bg-[#d4c5a9] text-[#4a3e2e] font-bold text-base md:text-lg border-2 border-[#bfae91] active:scale-95 transition-all text-left"
                                 >
                                     ›&nbsp;&nbsp;{c.label}
                                 </button>
@@ -430,9 +430,9 @@ export function DialogOverlay() {
                         ) : (
                             <button
                                 onClick={() => handleNext(undefined, d.action ?? 'close')}
-                                className="self-end flex items-center gap-2 px-6 py-3 rounded-full bg-[#8b7355] text-white hover:bg-[#6e5a40] font-bold text-lg active:scale-95 transition-all"
+                                className="self-end flex items-center gap-2 px-4 py-2 md:px-6 md:py-3 rounded-full bg-[#8b7355] text-white hover:bg-[#6e5a40] font-bold text-base md:text-lg active:scale-95 transition-all"
                             >
-                                Continue <span className="text-xl">▼</span>
+                                Continue <span className="text-lg md:text-xl">▼</span>
                             </button>
                         )}
                     </div>

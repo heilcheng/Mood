@@ -4,6 +4,7 @@ import { useState, useEffect, useRef, useMemo } from 'react'
 import { useGameStore } from '@/lib/gameStore'
 import { GlassModal } from '@/components/ui/GlassModal'
 import { GlassButton } from '@/components/ui/GlassButton'
+import { EventBridge } from '@/game/EventBridge'
 import { MOOD_EMOJI } from '@/lib/types'
 import type { EmotionAnalysis, Mood } from '@/lib/types'
 
@@ -366,7 +367,7 @@ export function DailyRecordModal() {
                   <button
                     key={dayIndex}
                     onClick={() => setSelectedDay(selectedDay === dayIndex ? null : dayIndex)}
-                    className={`flex flex-col items-center justify-center rounded-lg p-1 h-11 transition-all
+                    className={`flex flex-col items-center justify-center rounded-lg p-0.5 md:p-1 h-9 md:h-11 transition-all
                       ${isToday ? 'ring-2 ring-white/60' : ''}
                       ${selectedDay === dayIndex ? 'bg-white/20 scale-105' : 'hover:bg-white/10'}
                     `}
@@ -374,9 +375,9 @@ export function DailyRecordModal() {
                     <span className="text-[9px] text-white/40">{date.toLocaleDateString([], { weekday: 'narrow' })}</span>
                     <span className="text-[9px] text-white/30">{date.getDate()}</span>
                     {mood ? (
-                      <span className={`w-3 h-3 rounded-full mt-0.5 ${MOOD_DOT_COLOR[mood]}`} />
+                      <span className={`w-2 h-2 md:w-3 md:h-3 rounded-full mt-0.5 ${MOOD_DOT_COLOR[mood]}`} />
                     ) : (
-                      <span className="w-3 h-3 rounded-full mt-0.5 bg-white/10" />
+                      <span className="w-2 h-2 md:w-3 md:h-3 rounded-full mt-0.5 bg-white/10" />
                     )}
                   </button>
                 )
@@ -436,8 +437,8 @@ export function DailyRecordModal() {
                           key={m}
                           onClick={() => setQuickMood(quickMood === m ? null : m)}
                           className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border transition-all ${quickMood === m
-                              ? 'bg-white/25 border-white/50 text-white font-semibold scale-105'
-                              : 'bg-white/8 border-white/15 text-white/60 hover:bg-white/15'
+                            ? 'bg-white/25 border-white/50 text-white font-semibold scale-105'
+                            : 'bg-white/8 border-white/15 text-white/60 hover:bg-white/15'
                             }`}
                         >
                           <span>{MOOD_EMOJI[m]}</span>
@@ -465,6 +466,8 @@ export function DailyRecordModal() {
                         addLocalEntry({ mood: quickMood, tags: [], createdAt, source: 'journal', note: quickNote.trim() || undefined })
                         incrementEntryCount()
                         setLastJournalDate(dateKey)
+                        EventBridge.emit('journalCompleted', undefined as unknown as void)
+
                         // Quest: first reflection
                         const firstReflQ = quests.find(q => q.quest_key === 'first_reflection')
                         if (firstReflQ && firstReflQ.status !== 'completed') {
@@ -489,8 +492,8 @@ export function DailyRecordModal() {
                         setTimeout(() => setQuickSaved(false), 2500)
                       }}
                       className={`w-full py-2 rounded-xl text-sm font-semibold transition-all ${quickMood
-                          ? 'bg-emerald-500/80 hover:bg-emerald-500 text-white shadow-lg'
-                          : 'bg-white/10 text-white/30 cursor-not-allowed'
+                        ? 'bg-emerald-500/80 hover:bg-emerald-500 text-white shadow-lg'
+                        : 'bg-white/10 text-white/30 cursor-not-allowed'
                         }`}
                     >
                       {quickSaving ? 'Saving…' : 'Save Feeling'}

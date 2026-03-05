@@ -96,7 +96,7 @@ export function JournalModal() {
         }
 
         // Always: local entry + counters + quests (guests included)
-        addLocalEntry({ mood: data.mood as Mood, tags: data.tags ?? [], createdAt: new Date().toISOString(), source: 'journal' })
+        addLocalEntry({ mood: data.mood as Mood, tags: data.tags ?? [], createdAt: new Date().toISOString(), source: 'journal', note: text.trim() })
         incrementEntryCount()
         const today = new Date().toISOString().slice(0, 10)
         setLastJournalDate(today)

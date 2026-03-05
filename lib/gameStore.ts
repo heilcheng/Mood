@@ -1,5 +1,6 @@
 import { create } from 'zustand'
 import type { Mood, Plant, Quest, WeatherState, JournalEntry, AvatarChoice } from './types'
+import { QUESTS } from './types'
 
 interface GameStore {
   // User state
@@ -17,7 +18,7 @@ interface GameStore {
   entryCount: number
 
   // Local persistence (guest users)
-  localEntries: Array<{ mood: Mood; tags: string[]; createdAt: string; source: 'journal' | 'mindfulness' }>
+  localEntries: Array<{ mood: Mood; tags: string[]; createdAt: string; source: 'journal' | 'mindfulness'; note?: string }>
   lastBreathDate: string | null
   lastJournalDate: string | null
 
@@ -59,7 +60,7 @@ interface GameStore {
   setUnlockedItems: (items: string[]) => void
   setEntryCount: (count: number) => void
   incrementEntryCount: () => void
-  addLocalEntry: (e: { mood: Mood; tags: string[]; createdAt: string; source: 'journal' | 'mindfulness' }) => void
+  addLocalEntry: (e: { mood: Mood; tags: string[]; createdAt: string; source: 'journal' | 'mindfulness'; note?: string }) => void
   setLastBreathDate: (d: string | null) => void
   setLastJournalDate: (d: string | null) => void
 
@@ -86,10 +87,8 @@ export const useGameStore = create<GameStore>((set) => ({
   avatar: 'farmer_girl',
   displayName: null,
   lastMood: null,
-  streak: 0,
   weather: 'sunshine',
   plants: [],
-  quests: [],
   unlockedItems: [],
   entryCount: 0,
   // Local persistence seeded from localStorage (SSR-safe)
@@ -99,6 +98,17 @@ export const useGameStore = create<GameStore>((set) => ({
     ? localStorage.getItem('mf_breath_date') || null : null,
   lastJournalDate: typeof window !== 'undefined'
     ? localStorage.getItem('mf_journal_date') || null : null,
+  streak: typeof window !== 'undefined'
+    ? Number(localStorage.getItem('mf_streak') ?? '0') : 0,
+  quests: (() => {
+    if (typeof window === 'undefined') return []
+    try {
+      const saved = JSON.parse(localStorage.getItem('mf_quests') ?? 'null')
+      if (saved) return saved
+    } catch { }
+    // Bootstrap quests from QUESTS definition
+    return QUESTS.map(q => ({ quest_key: q.key, progress: 0, status: 'active' as const }))
+  })(),
   hasSeenTutorial: false,
   hasPickedAvatar: false,
   journalOpen: false,
@@ -127,20 +137,32 @@ export const useGameStore = create<GameStore>((set) => ({
   setWeather: (weather) => set({ weather }),
   setPlants: (plants) => set({ plants }),
   addPlant: (plant) => set((s) => ({ plants: [...s.plants, plant] })),
-  setQuests: (quests) => set({ quests }),
+  setQuests: (quests) => { if (typeof window !== 'undefined') localStorage.setItem('mf_quests', JSON.stringify(quests)); set({ quests }) },
   updateQuest: (questKey, progress, status) =>
-    set((s) => ({
-      quests: s.quests.map((q) =>
+    set((s) => {
+      const quests = s.quests.map((q) =>
         q.quest_key === questKey ? { ...q, progress, status } : q
-      ),
-    })),
+      )
+      if (typeof window !== 'undefined') localStorage.setItem('mf_quests', JSON.stringify(quests))
+      return { quests }
+    }),
   setUnlockedItems: (items) => set({ unlockedItems: items }),
   setEntryCount: (count) => set({ entryCount: count }),
   incrementEntryCount: () => set((s) => ({ entryCount: s.entryCount + 1 })),
   addLocalEntry: (entry) => set((s) => {
     const next = [...s.localEntries, entry]
     if (typeof window !== 'undefined') localStorage.setItem('mf_entries', JSON.stringify(next))
-    return { localEntries: next }
+    // Recompute streak from consecutive days in next
+    const days = new Set(next.map(e => e.createdAt.slice(0, 10)))
+    let streak = 0
+    const today = new Date()
+    for (let i = 0; i < 365; i++) {
+      const d = new Date(today); d.setDate(today.getDate() - i)
+      if (days.has(d.toISOString().slice(0, 10))) streak++
+      else break
+    }
+    if (typeof window !== 'undefined') localStorage.setItem('mf_streak', String(streak))
+    return { localEntries: next, streak }
   }),
   setLastBreathDate: (d) => {
     if (typeof window !== 'undefined') localStorage.setItem('mf_breath_date', d ?? '')

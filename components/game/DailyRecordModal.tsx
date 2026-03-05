@@ -215,13 +215,22 @@ function StarField() {
 
 // ── Main component ────────────────────────────────────────────────────────────
 export function DailyRecordModal() {
-  const { dailyRecordOpen, closeDailyRecord, userId, openWeeklyInsight, entryCount, streak, localEntries } = useGameStore()
+  const {
+    dailyRecordOpen, closeDailyRecord, userId, openWeeklyInsight,
+    entryCount, streak, localEntries, addLocalEntry, setLastJournalDate,
+    incrementEntryCount, quests, updateQuest, setQuestNotification,
+  } = useGameStore()
   const [tab, setTab] = useState<'record' | 'insights'>('record')
   const [analysis, setAnalysis] = useState<EmotionAnalysis | null>(null)
   const [narrative, setNarrative] = useState<string | null>(null)
   const [loadingInsights, setLoadingInsights] = useState(false)
   const [selectedDay, setSelectedDay] = useState<number | null>(null)
   const [insightsVisible, setInsightsVisible] = useState(false)
+  // Quick-log state for days without an entry
+  const [quickMood, setQuickMood] = useState<Mood | null>(null)
+  const [quickNote, setQuickNote] = useState('')
+  const [quickSaving, setQuickSaving] = useState(false)
+  const [quickSaved, setQuickSaved] = useState(false)
   const typedNarrative = useTypewriter(narrative)
 
   useEffect(() => {
@@ -331,11 +340,13 @@ export function DailyRecordModal() {
       {/* ── DAILY RECORD TAB ──────────────────────────────────────────────── */}
       {tab === 'record' && (
         <div className="space-y-4">
+
+          {/* Stats row */}
           <div className="grid grid-cols-3 gap-2">
             {[
-              { label: 'Current Streak', value: `${streak} days`, icon: '🔥' },
-              { label: 'Total Entries', value: String(entryCount), icon: '📝' },
-              { label: 'Best Streak (30d)', value: `${bestStreak} days`, icon: '⭐' },
+              { label: 'Current Streak', value: `${streak} day${streak !== 1 ? 's' : ''}`, icon: '🔥' },
+              { label: 'Total Entries', value: String(entryCount || localEntries.length), icon: '📝' },
+              { label: 'Best Streak', value: `${bestStreak} day${bestStreak !== 1 ? 's' : ''}`, icon: '⭐' },
             ].map(({ label, value, icon }) => (
               <div key={label} className="bg-white/10 rounded-xl p-3 text-center border border-white/15">
                 <p className="text-xl mb-1">{icon}</p>
@@ -345,8 +356,9 @@ export function DailyRecordModal() {
             ))}
           </div>
 
+          {/* 30-day calendar */}
           <div>
-            <p className="text-white/60 text-xs uppercase tracking-wide mb-2">Last 30 Days</p>
+            <p className="text-white/60 text-xs uppercase tracking-wide mb-2">Last 30 Days — tap a day to view</p>
             <div className="grid grid-cols-7 gap-1">
               {calDays.map(({ date, mood, dayIndex }) => {
                 const isToday = dayIndex === 29
@@ -354,16 +366,17 @@ export function DailyRecordModal() {
                   <button
                     key={dayIndex}
                     onClick={() => setSelectedDay(selectedDay === dayIndex ? null : dayIndex)}
-                    className={`flex flex-col items-center justify-center rounded-lg p-1 h-10 transition-all
+                    className={`flex flex-col items-center justify-center rounded-lg p-1 h-11 transition-all
                       ${isToday ? 'ring-2 ring-white/60' : ''}
-                      ${selectedDay === dayIndex ? 'bg-white/20' : 'hover:bg-white/10'}
+                      ${selectedDay === dayIndex ? 'bg-white/20 scale-105' : 'hover:bg-white/10'}
                     `}
                   >
-                    <span className="text-[9px] text-white/40">{date.getDate()}</span>
+                    <span className="text-[9px] text-white/40">{date.toLocaleDateString([], { weekday: 'narrow' })}</span>
+                    <span className="text-[9px] text-white/30">{date.getDate()}</span>
                     {mood ? (
-                      <span className={`w-3 h-3 rounded-full ${MOOD_DOT_COLOR[mood]}`} />
+                      <span className={`w-3 h-3 rounded-full mt-0.5 ${MOOD_DOT_COLOR[mood]}`} />
                     ) : (
-                      <span className="w-3 h-3 rounded-full bg-white/15" />
+                      <span className="w-3 h-3 rounded-full mt-0.5 bg-white/10" />
                     )}
                   </button>
                 )
@@ -371,20 +384,157 @@ export function DailyRecordModal() {
             </div>
           </div>
 
-          {selectedDay !== null && (
-            <div className="bg-white/10 border border-white/20 rounded-xl p-3 animate-fadeIn">
-              <p className="text-white/60 text-xs mb-1">
-                {calDays[selectedDay].date.toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' })}
-              </p>
-              {calDays[selectedDay].mood ? (
-                <p className="text-white text-sm font-medium">
-                  {MOOD_EMOJI[calDays[selectedDay].mood!]} Mood: <span className="capitalize">{calDays[selectedDay].mood}</span>
+          {/* Selected day detail + quick-log */}
+          {selectedDay !== null && (() => {
+            const day = calDays[selectedDay]
+            const dateKey = day.date.toISOString().slice(0, 10)
+            const dayEntries = localEntries.filter(e => e.createdAt.startsWith(dateKey))
+            const isToday = selectedDay === 29
+
+            return (
+              <div className="bg-white/8 border border-white/15 rounded-2xl p-4 space-y-3 animate-fadeIn">
+                <p className="text-white/70 text-xs font-semibold uppercase tracking-wide">
+                  {day.date.toLocaleDateString(undefined, { weekday: 'long', month: 'long', day: 'numeric' })}
+                  {isToday && <span className="ml-2 text-emerald-400">· Today</span>}
                 </p>
-              ) : (
-                <p className="text-white/40 text-sm">No entry this day</p>
-              )}
+
+                {/* Entries for this day */}
+                {dayEntries.length > 0 ? (
+                  <div className="space-y-2">
+                    {dayEntries.map((e, i) => (
+                      <div key={i} className="bg-white/8 border border-white/10 rounded-xl p-3">
+                        <div className="flex items-center gap-2 mb-1">
+                          <span className="text-lg">{MOOD_EMOJI[e.mood]}</span>
+                          <span className="text-white/80 text-xs font-semibold capitalize">{e.mood}</span>
+                          <span className="ml-auto text-white/30 text-[10px]">
+                            {new Date(e.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            {' · '}{e.source}
+                          </span>
+                        </div>
+                        {e.note && (
+                          <p className="text-white/70 text-sm leading-relaxed italic">
+                            &ldquo;{e.note}&rdquo;
+                          </p>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <p className="text-white/35 text-sm">No entry recorded for this day.</p>
+                )}
+
+                {/* Quick-log: add a feeling for today (or past days) */}
+                {!quickSaved && (
+                  <div className="border-t border-white/10 pt-3 space-y-2">
+                    <p className="text-white/60 text-xs">
+                      {dayEntries.length > 0 ? 'Add another feeling this day 💬' : 'Log how you felt this day ✏️'}
+                    </p>
+                    {/* Mood picker */}
+                    <div className="flex flex-wrap gap-1.5">
+                      {(['happy', 'gratitude', 'calm', 'growth', 'stressed', 'crisis'] as Mood[]).map(m => (
+                        <button
+                          key={m}
+                          onClick={() => setQuickMood(quickMood === m ? null : m)}
+                          className={`flex items-center gap-1 text-xs px-2.5 py-1 rounded-full border transition-all ${quickMood === m
+                              ? 'bg-white/25 border-white/50 text-white font-semibold scale-105'
+                              : 'bg-white/8 border-white/15 text-white/60 hover:bg-white/15'
+                            }`}
+                        >
+                          <span>{MOOD_EMOJI[m]}</span>
+                          <span className="capitalize">{m}</span>
+                        </button>
+                      ))}
+                    </div>
+                    {/* Optional note */}
+                    <textarea
+                      value={quickNote}
+                      onChange={e => setQuickNote(e.target.value)}
+                      placeholder="Add a note (optional)…"
+                      rows={2}
+                      className="w-full bg-white/8 border border-white/15 rounded-xl px-3 py-2 text-sm
+                        text-white placeholder-white/30 resize-none outline-none
+                        focus:border-white/30 focus:bg-white/12 transition-all"
+                    />
+                    {/* Save button */}
+                    <button
+                      disabled={!quickMood || quickSaving}
+                      onClick={async () => {
+                        if (!quickMood) return
+                        setQuickSaving(true)
+                        const createdAt = new Date(dateKey + 'T12:00:00').toISOString()
+                        addLocalEntry({ mood: quickMood, tags: [], createdAt, source: 'journal', note: quickNote.trim() || undefined })
+                        incrementEntryCount()
+                        setLastJournalDate(dateKey)
+                        // Quest: first reflection
+                        const firstReflQ = quests.find(q => q.quest_key === 'first_reflection')
+                        if (firstReflQ && firstReflQ.status !== 'completed') {
+                          updateQuest('first_reflection', 1, 'completed')
+                          setQuestNotification('Quest complete: First Reflection planted! 🌱')
+                          setTimeout(() => setQuestNotification(null), 3500)
+                        }
+                        // Quest: weekly reflection progress
+                        const weeklyQ = quests.find(q => q.quest_key === 'weekly_reflection')
+                        if (weeklyQ && weeklyQ.status !== 'completed') {
+                          const np = Math.min(weeklyQ.progress + 1, 7)
+                          updateQuest('weekly_reflection', np, np >= 7 ? 'completed' : 'active')
+                          if (np >= 7) {
+                            setQuestNotification('You have 7 reflections! View your Weekly Insight! 📊')
+                            setTimeout(() => setQuestNotification(null), 5000)
+                          }
+                        }
+                        setQuickSaving(false)
+                        setQuickSaved(true)
+                        setQuickMood(null)
+                        setQuickNote('')
+                        setTimeout(() => setQuickSaved(false), 2500)
+                      }}
+                      className={`w-full py-2 rounded-xl text-sm font-semibold transition-all ${quickMood
+                          ? 'bg-emerald-500/80 hover:bg-emerald-500 text-white shadow-lg'
+                          : 'bg-white/10 text-white/30 cursor-not-allowed'
+                        }`}
+                    >
+                      {quickSaving ? 'Saving…' : 'Save Feeling'}
+                    </button>
+                  </div>
+                )}
+                {quickSaved && (
+                  <div className="text-center py-3 animate-fadeIn">
+                    <p className="text-emerald-400 text-sm font-semibold">✓ Feeling saved!</p>
+                  </div>
+                )}
+              </div>
+            )
+          })()}
+
+          {/* Previous Entries log */}
+          {localEntries.length > 0 && (
+            <div>
+              <p className="text-white/60 text-xs uppercase tracking-wide mb-2">Previous Entries</p>
+              <div className="space-y-2 max-h-52 overflow-y-auto pr-1 scrollbar-thin">
+                {[...localEntries].reverse().slice(0, 15).map((e, i) => (
+                  <div key={i} className="bg-white/6 border border-white/10 rounded-xl p-3 flex gap-3">
+                    <span className="text-xl flex-shrink-0 mt-0.5">{MOOD_EMOJI[e.mood]}</span>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-baseline justify-between gap-2">
+                        <span className="text-white/80 text-xs font-semibold capitalize">{e.mood}</span>
+                        <span className="text-white/30 text-[10px] flex-shrink-0">
+                          {new Date(e.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric' })}
+                        </span>
+                      </div>
+                      {e.note ? (
+                        <p className="text-white/65 text-xs leading-relaxed mt-0.5 truncate">
+                          {e.note}
+                        </p>
+                      ) : (
+                        <p className="text-white/25 text-xs italic mt-0.5">{e.source} check-in</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
             </div>
           )}
+
         </div>
       )}
 

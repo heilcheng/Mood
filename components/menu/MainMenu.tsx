@@ -226,8 +226,8 @@ export function MainMenu() {
           </div>
 
           {/* Glass card */}
-          <div className="w-full max-w-sm flex flex-col gap-4"
-            style={{ background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(20px)', borderRadius: 24, border: '1.5px solid rgba(255,255,255,0.45)', padding: '32px 28px', boxShadow: '0 12px 60px rgba(0,0,0,0.12)' }}>
+          <div className="w-full max-w-sm flex flex-col gap-3 md:gap-4"
+            style={{ background: 'rgba(255,255,255,0.22)', backdropFilter: 'blur(20px)', borderRadius: 24, border: '1.5px solid rgba(255,255,255,0.45)', padding: '24px 20px', boxShadow: '0 12px 60px rgba(0,0,0,0.12)' }}>
 
             {supabaseEnabled && session ? (
               <>
@@ -349,7 +349,7 @@ export function MainMenu() {
                 <button
                   key={a.key}
                   onClick={() => setSelected(a.key)}
-                  className="flex flex-col items-center gap-3 p-6 rounded-3xl transition-all duration-300 active:scale-95 relative"
+                  className="flex flex-col items-center gap-2 md:gap-3 p-4 md:p-6 rounded-3xl transition-all duration-300 active:scale-95 relative min-w-[110px] md:min-w-[130px]"
                   style={{
                     background: isSelected
                       ? `rgba(255,255,255,0.35)`
@@ -358,7 +358,6 @@ export function MainMenu() {
                     border: isSelected ? `2.5px solid ${a.color}` : '1.5px solid rgba(255,255,255,0.3)',
                     boxShadow: isSelected ? `0 0 28px ${a.color}66, 0 8px 32px rgba(0,0,0,0.12)` : '0 4px 20px rgba(0,0,0,0.08)',
                     transform: isSelected ? 'scale(1.06)' : 'scale(1)',
-                    minWidth: 130,
                   }}
                 >
                   {isSelected && (
@@ -369,18 +368,18 @@ export function MainMenu() {
                   )}
 
                   {/* Pixel sprite */}
-                  <div className="relative">
+                  <div className="relative transform md:scale-100 scale-75 origin-bottom">
                     <div className="absolute inset-0 rounded-full blur-xl opacity-70"
                       style={{ background: a.color, transform: 'scale(0.8) translateY(8px)' }} />
                     <AvatarSprite src={a.sprite} size={80} />
                   </div>
 
-                  <div className="text-center">
-                    <p className="text-white font-bold text-base" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.2)' }}>
+                  <div className="text-center mt-[-10px] md:mt-0">
+                    <p className="text-white font-bold text-sm md:text-base" style={{ textShadow: '0 1px 4px rgba(0,0,0,0.2)' }}>
                       {a.label}
                     </p>
                     {a.description.split('\n').map((line, i) => (
-                      <p key={i} className="text-white/75 text-xs mt-0.5">{line}</p>
+                      <p key={i} className="text-white/75 text-[10px] md:text-xs mt-0.5">{line}</p>
                     ))}
                   </div>
                 </button>

@@ -6,6 +6,7 @@ import { GlassToggle } from '@/components/ui/GlassToggle'
 import { GlassSlider } from '@/components/ui/GlassSlider'
 import { GlassButton } from '@/components/ui/GlassButton'
 import { useGameStore } from '@/lib/gameStore'
+import { AudioManager } from '@/lib/audioManager'
 
 interface SettingsModalProps {
   isOpen: boolean
@@ -23,11 +24,19 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
 
   const [nameInput, setNameInput] = useState(userSettings.displayName ?? displayName ?? '')
   const [promptStyle, setPromptStyle] = useState(userSettings.journalPromptStyle)
-  const [musicVolume, setMusicVolume] = useState(70)
-  const [sfxVolume, setSfxVolume] = useState(80)
-  const [ambientVolume, setAmbientVolume] = useState(60)
   const [pixelArt, setPixelArt] = useState(true)
   const [showHints, setShowHints] = useState(true)
+
+  const handleMusicVolume = (v: number) => {
+    updateUserSettings({ musicVolume: v })
+    AudioManager.setMusicVolume(v)
+  }
+
+  const handleSfxVolume = (v: number) => {
+    updateUserSettings({ sfxVolume: v })
+    AudioManager.setSfxVolume(v)
+    AudioManager.playSfx('click')
+  }
 
   const handleSave = () => {
     updateUserSettings({
@@ -94,9 +103,16 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         {/* Audio section */}
         <div className="border-t border-white/10 pt-4 space-y-4">
           <p className="text-white/60 text-xs uppercase tracking-wide font-medium">Audio</p>
-          <GlassSlider value={musicVolume} onChange={setMusicVolume} label="Music Volume" />
-          <GlassSlider value={sfxVolume} onChange={setSfxVolume} label="Sound Effects" />
-          <GlassSlider value={ambientVolume} onChange={setAmbientVolume} label="Ambient Sounds" />
+          <GlassSlider
+            value={userSettings.musicVolume ?? 70}
+            onChange={handleMusicVolume}
+            label="Music Volume"
+          />
+          <GlassSlider
+            value={userSettings.sfxVolume ?? 80}
+            onChange={handleSfxVolume}
+            label="Sound Effects"
+          />
         </div>
 
         {/* Display section */}

@@ -31,7 +31,7 @@ const CRISIS_RESOURCES = [
 ]
 
 export function JournalModal() {
-  const { journalOpen, closeJournal, openBreathing, userId, addPlant, incrementEntryCount, entryCount, plants, setLastMood, setLastAnalysis, setQuestNotification, quests } = useGameStore()
+  const { journalOpen, closeJournal, openBreathing, userId, addPlant, incrementEntryCount, entryCount, plants, setLastMood, setLastAnalysis, setQuestNotification, quests, updateQuest } = useGameStore()
   const [text, setText] = useState('')
   const [selectedMood, setSelectedMood] = useState<keyof typeof MOOD_EMOJI | null>(null)
   const [loading, setLoading] = useState(false)
@@ -101,15 +101,22 @@ export function JournalModal() {
         incrementEntryCount()
 
         // Quest: first reflection
-        if (entryCount === 0) {
+        const firstReflQ = quests.find(q => q.quest_key === 'first_reflection')
+        if (firstReflQ && firstReflQ.status !== 'completed' && entryCount === 0) {
+          updateQuest('first_reflection', 1, 'completed')
           setQuestNotification('Quest complete: First Reflection planted!')
           setTimeout(() => setQuestNotification(null), 3000)
         }
 
-        // Check weekly
-        if ((entryCount + 1) >= 7) {
-          setQuestNotification('You have 7 reflections! View your Weekly Insight!')
-          setTimeout(() => setQuestNotification(null), 5000)
+        // Quest: weekly reflection
+        const weeklyQ = quests.find(q => q.quest_key === 'weekly_reflection')
+        if (weeklyQ && weeklyQ.status !== 'completed') {
+          const newProgress = Math.min(weeklyQ.progress + 1, 7)
+          updateQuest('weekly_reflection', newProgress, newProgress >= 7 ? 'completed' : 'active')
+          if (newProgress >= 7) {
+            setQuestNotification('You have 7 reflections! View your Weekly Insight!')
+            setTimeout(() => setQuestNotification(null), 5000)
+          }
         }
       }
     } catch (err) {

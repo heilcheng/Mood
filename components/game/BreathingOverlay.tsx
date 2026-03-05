@@ -194,6 +194,7 @@ export function BreathingOverlay() {
   const {
     breathingOpen, closeBreathing, openJournal,
     setQuestNotification, userId, addPlant, plants, incrementEntryCount, streak,
+    updateQuest, quests,
   } = useGameStore()
 
   const [stage, setStage] = useState<'select' | 'activity' | 'feeling' | 'reward'>('select')
@@ -315,6 +316,10 @@ export function BreathingOverlay() {
         }
       }
       incrementEntryCount()
+      const calmQ = quests.find(q => q.quest_key === 'calm_minute')
+      if (calmQ && calmQ.status !== 'completed') {
+        updateQuest('calm_minute', 1, 'completed')
+      }
       setPlantName(plantType || 'seed')
       setStage('reward')
       setQuestNotification('Quest: A Calm Minute — complete!')

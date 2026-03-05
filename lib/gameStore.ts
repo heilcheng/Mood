@@ -36,6 +36,8 @@ interface GameStore {
   userSettings: {
     displayName: string | null
     journalPromptStyle: 'gentle' | 'exploratory' | 'creative'
+    musicVolume: number
+    sfxVolume: number
   }
 
   // Actions
@@ -96,6 +98,8 @@ export const useGameStore = create<GameStore>((set) => ({
   userSettings: {
     displayName: null,
     journalPromptStyle: 'gentle',
+    musicVolume: 70,
+    sfxVolume: 80,
   },
 
   setHasSeenTutorial: (seen) => set({ hasSeenTutorial: seen }),

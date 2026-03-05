@@ -191,7 +191,11 @@ export function DailyRecordModal() {
       .then((r) => r.json())
       .then(setAnalysis)
       .catch(console.error)
-  }, [dailyRecordOpen, userId])
+  }, [dailyRecordOpen, userId, entryCount])
+
+  useEffect(() => {
+    setNarrative(null)
+  }, [entryCount])
 
   useEffect(() => {
     if (tab !== 'insights') { setInsightsVisible(false); return }

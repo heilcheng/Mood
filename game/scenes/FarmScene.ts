@@ -300,63 +300,6 @@ export class FarmScene extends Phaser.Scene {
     const can = this.add.image(GARDEN_ORIGIN.x * T - T * 2, GARDEN_ORIGIN.y * T + T * 2, 'farmprops_ss', 2)
     can.setDepth(2)
 
-    // ── TOP RIGHT LIVING AREA (x≈21-36, y≈4-12) ──────────────────────────────
-    // Cherry blossom tree flanking the barn on right side
-    const cherry1 = this.add.image(35 * T + T / 2, 5 * T, 'tree_cherry')
-    cherry1.setOrigin(0.5, 1).setDepth(3).setScale(0.9)
-    // Second tree further right
-    const cherry2 = this.add.image(36 * T + T / 2, 10 * T, 'tree_cherry')
-    cherry2.setOrigin(0.5, 1).setDepth(3).setScale(0.75)
-
-    // Oak tree left of barn (fills empty air)
-    const oak = this.add.image(22 * T, 4 * T, 'tree_oak')
-    oak.setOrigin(0.5, 1).setDepth(3).setScale(0.85)
-
-    // Spruce trees — top-right corner strip
-    const spruce1 = this.add.image(34 * T, 3 * T, 'tree_spruce')
-    spruce1.setOrigin(0.5, 1).setDepth(3).setScale(0.8)
-    const spruce2 = this.add.image(36 * T, 4 * T, 'tree_spruce')
-    spruce2.setOrigin(0.5, 1).setDepth(3).setScale(0.7)
-
-    // Cozy seating cluster right of barn entrance (x≈30-33, y≈10-12)
-    // Stump seats + table setup
-    const stump1 = this.add.image(30 * T + T / 2, 11 * T + T / 2, 'farmprops_ss', 16)
-    const stump2 = this.add.image(32 * T + T / 2, 11 * T + T / 2, 'farmprops_ss', 16)
-    const stump3 = this.add.image(31 * T + T / 2, 10 * T + T / 2, 'farmprops_ss', 16)
-    stump1.setDepth(2); stump2.setDepth(2); stump3.setDepth(2)
-
-    // Barrels near barn wall (x≈21-22, y≈7-9)
-    const barrel1 = this.add.image(21 * T + T / 2, 8 * T + T / 2, 'farmprops_ss', 0)
-    const barrel2 = this.add.image(22 * T + T / 2, 8 * T + T / 2, 'farmprops_ss', 1)
-    const barrel3 = this.add.image(21 * T + T / 2, 9 * T + T / 2, 'farmprops_ss', 0)
-    barrel1.setDepth(2); barrel2.setDepth(2); barrel3.setDepth(2)
-
-    // Wood pile east of seating (x≈34, y≈11)
-    const wood = this.add.image(34 * T + T / 2, 11 * T + T / 2, 'farmprops_ss', 8)
-    wood.setDepth(2)
-
-    // Hay bales scattered (farmprops_ss frame 17 or nearest)
-    ;[
-      { x: 33, y: 9 }, { x: 34, y: 8 }, { x: 35, y: 11 },
-    ].forEach(({ x, y }) => {
-      const hay = this.add.image(x * T + T / 2, y * T + T / 2, 'farmprops_ss', 17)
-      hay.setDepth(2)
-    })
-
-    // Flowers in pots row along barn facade (farmprops_ss frame 4 or 5)
-    ;[22, 24, 26, 28].forEach((tx) => {
-      const pot = this.add.image(tx * T + T / 2, 11 * T + T / 2, 'farmprops_ss', 4)
-      pot.setDepth(2)
-    })
-
-    // Subtle gentle tween on both cherry trees (idle sway)
-    ;[cherry1, cherry2].forEach((tree) => {
-      this.tweens.add({
-        targets: tree, angle: { from: -1, to: 1 },
-        duration: 2800 + Math.random() * 800,
-        yoyo: true, repeat: -1, ease: 'Sine.easeInOut',
-      })
-    })
   }
 
   private renderBoats(): void {

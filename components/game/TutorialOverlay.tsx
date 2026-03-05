@@ -49,12 +49,6 @@ const STEPS = [
     },
 ]
 
-const positionStyles: Record<string, string> = {
-    'bottom-center': 'fixed bottom-6 left-1/2 -translate-x-1/2',
-    'bottom-left':   'fixed bottom-6 left-4',
-    'bottom-right':  'fixed bottom-6 right-4',
-}
-
 export function TutorialOverlay() {
     const { hasSeenTutorial, setHasSeenTutorial, hasPickedAvatar } = useGameStore()
     const [step, setStep] = useState(0)
@@ -71,7 +65,7 @@ export function TutorialOverlay() {
 
     return (
         // No backdrop — player can move and interact freely during tutorial
-        <div className={`${positionStyles[current.position]} z-[999] pointer-events-auto w-72`}>
+        <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-[999] pointer-events-auto w-72">
             <div
                 className="flex flex-col gap-3 rounded-2xl p-5"
                 style={{

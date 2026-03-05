@@ -42,14 +42,15 @@ export function HUD() {
     <>
       {/* Top-left: mood + streak + icon buttons */}
       <div className="absolute top-4 left-4 z-10 flex flex-col gap-2">
-        <div className="bg-amber-50/90 border border-amber-200 rounded-2xl shadow-xl px-3 py-2 flex items-center gap-2">
+        <div className="bg-black/40 border border-white/20 rounded-2xl shadow-xl px-3 py-2 flex items-center gap-2"
+          style={{ backdropFilter: 'blur(16px)' }}>
           <span className="text-xl">
             {lastMood ? MOOD_EMOJI[lastMood] : '🌱'}
           </span>
           {streak > 0 && (
             <div className="flex items-center gap-1">
-              <span className="text-sm text-amber-900/80">streak</span>
-              <span className="text-sm font-bold text-amber-900">{streak}</span>
+              <span className="text-sm text-white/60">streak</span>
+              <span className="text-sm font-bold text-white/90">{streak}</span>
               <span className="text-xs">🔥</span>
             </div>
           )}
@@ -58,9 +59,10 @@ export function HUD() {
           <button
             onClick={openDailyRecord}
             title="Daily Record"
-            className="bg-amber-50/90 border border-amber-200 shadow-xl text-base
+            className="bg-black/40 border border-white/20 shadow-xl text-base
               w-9 h-9 rounded-xl flex items-center justify-center
-              hover:bg-amber-100 transition-all"
+              hover:bg-white/10 transition-all"
+            style={{ backdropFilter: 'blur(16px)' }}
           >
             📅
           </button>
@@ -68,9 +70,10 @@ export function HUD() {
             <button
               onClick={() => openWeeklyInsight([])}
               title="Weekly Insight"
-              className="bg-amber-100/90 border border-amber-300 shadow-xl text-base
+              className="bg-black/40 border border-white/30 shadow-xl text-base
                 w-9 h-9 rounded-xl flex items-center justify-center
-                hover:bg-amber-200 transition-all animate-pulse-soft"
+                hover:bg-white/10 transition-all animate-pulse-soft"
+              style={{ backdropFilter: 'blur(16px)' }}
             >
               📊
             </button>
@@ -78,9 +81,10 @@ export function HUD() {
           <button
             onClick={openSettings}
             title="Settings"
-            className="bg-amber-50/90 border border-amber-200 shadow-xl text-base
+            className="bg-black/40 border border-white/20 shadow-xl text-base
               w-9 h-9 rounded-xl flex items-center justify-center
-              hover:bg-amber-100 transition-all"
+              hover:bg-white/10 transition-all"
+            style={{ backdropFilter: 'blur(16px)' }}
           >
             ⚙️
           </button>
@@ -89,9 +93,10 @@ export function HUD() {
 
       {/* Top-right: weather + time */}
       <div className="absolute top-4 right-4 z-10">
-        <div className="bg-amber-50/90 border border-amber-200 rounded-2xl shadow-xl px-3 py-2 flex items-center gap-2">
+        <div className="bg-black/40 border border-white/20 rounded-2xl shadow-xl px-3 py-2 flex items-center gap-2"
+          style={{ backdropFilter: 'blur(16px)' }}>
           <span className="text-xl">{WEATHER_EMOJI[weather] || '☀️'}</span>
-          <span className="text-sm font-semibold text-amber-900">
+          <span className="text-sm font-semibold text-white/90">
             {new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
           </span>
         </div>
@@ -100,11 +105,12 @@ export function HUD() {
       {/* Bottom-center: interaction hint */}
       {nearbyInteractable && (
         <div className="absolute bottom-24 left-1/2 -translate-x-1/2 z-10 animate-fadeIn">
-          <div className="bg-amber-50/95 border-2 border-amber-300 rounded-2xl px-5 py-3 shadow-xl flex items-center gap-3">
-            <span className="bg-amber-400 text-white text-sm font-black px-2 py-1 rounded-lg border border-amber-500 shadow">
+          <div className="bg-black/50 border border-white/20 rounded-2xl px-5 py-3 shadow-xl flex items-center gap-3"
+            style={{ backdropFilter: 'blur(16px)' }}>
+            <span className="bg-white/20 text-white text-sm font-black px-2 py-1 rounded-lg border border-white/30 shadow">
               E
             </span>
-            <p className="text-amber-900 font-bold text-base">
+            <p className="text-white/90 font-bold text-base">
               {INTERACTABLE_LABELS[nearbyInteractable] || 'Interact'}
             </p>
           </div>
@@ -114,8 +120,8 @@ export function HUD() {
       {/* Bottom-right: quest tracker with progress */}
       {activeQuests.length > 0 && (
         <div className="absolute bottom-4 right-4 z-10">
-          <div className="bg-emerald-800/70 border border-emerald-600/60 rounded-2xl shadow-xl p-3 min-w-52">
-            <p className="text-sm font-bold text-emerald-100 mb-2 uppercase tracking-wide">Quests</p>
+          <div className="bg-black/40 border border-white/20 rounded-2xl shadow-xl p-3 min-w-52">
+            <p className="text-sm font-bold text-white/90 mb-2 uppercase tracking-wide">Quests</p>
             <div className="flex flex-col gap-2">
               {activeQuests.map((q) => {
                 const target = questTargetMap[q.quest_key] ?? 1
@@ -126,17 +132,17 @@ export function HUD() {
                     <div className="flex items-center justify-between gap-2">
                       <div className="flex items-center gap-1.5">
                         <span className="text-xs flex-shrink-0">🌿</span>
-                        <span className="text-sm text-emerald-50 capitalize">
+                        <span className="text-sm text-white/70 capitalize">
                           {q.quest_key.replace(/_/g, ' ')}
                         </span>
                       </div>
-                      <span className="text-xs text-emerald-200/70 tabular-nums flex-shrink-0">
+                      <span className="text-xs text-white/50 tabular-nums flex-shrink-0">
                         {progress} / {target}
                       </span>
                     </div>
-                    <div className="w-full h-1.5 bg-emerald-900/50 rounded-full overflow-hidden">
+                    <div className="w-full h-1.5 bg-white/15 rounded-full overflow-hidden">
                       <div
-                        className="h-full bg-emerald-400 rounded-full transition-all duration-500"
+                        className="h-full bg-white/60 rounded-full transition-all duration-500"
                         style={{ width: `${pct}%` }}
                       />
                     </div>
@@ -151,8 +157,9 @@ export function HUD() {
       {/* Quest notification toast */}
       {questNotification && (
         <div className="absolute top-16 left-1/2 -translate-x-1/2 z-20 animate-slideUp">
-          <div className="bg-emerald-700/90 border border-emerald-500/60 rounded-2xl shadow-xl px-5 py-3">
-            <p className="text-sm text-emerald-50 font-medium text-center max-w-xs">
+          <div className="bg-black/50 border border-white/20 rounded-2xl shadow-xl px-5 py-3"
+            style={{ backdropFilter: 'blur(16px)' }}>
+            <p className="text-sm text-white/90 font-medium text-center max-w-xs">
               {questNotification}
             </p>
           </div>
@@ -161,8 +168,9 @@ export function HUD() {
 
       {/* Controls hint — bottom pill */}
       <div className="absolute bottom-4 left-1/2 -translate-x-1/2 z-10">
-        <div className="bg-amber-50/80 border border-amber-200/60 rounded-full shadow px-4 py-1">
-          <p className="text-sm text-amber-900/80 font-medium">J = Journal &nbsp;|&nbsp; WASD/Arrows = Move &nbsp;|&nbsp; E = Interact</p>
+        <div className="bg-black/40 border border-white/15 rounded-full shadow px-4 py-1"
+          style={{ backdropFilter: 'blur(12px)' }}>
+          <p className="text-sm text-white/60 font-medium">J = Journal &nbsp;|&nbsp; WASD/Arrows = Move &nbsp;|&nbsp; E = Interact</p>
         </div>
       </div>
     </>

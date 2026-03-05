@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react'
 import { useGameStore } from '@/lib/gameStore'
 import { EventBridge } from '@/game/EventBridge'
+import { AudioManager } from '@/lib/audioManager'
 
 export function GameCanvas() {
   const containerRef = useRef<HTMLDivElement>(null)
@@ -17,6 +18,8 @@ export function GameCanvas() {
     setQuestNotification,
     updateQuest,
     quests,
+    userSettings,
+    weather,
   } = useGameStore()
 
   useEffect(() => {
@@ -54,14 +57,29 @@ export function GameCanvas() {
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  // Wire EventBridge → Zustand
+  // Start ambient audio on first mount (requires user interaction — browser allows it after click)
+  useEffect(() => {
+    const isNight = weather === 'night'
+    AudioManager.setMusicVolume(userSettings.musicVolume ?? 70)
+    AudioManager.setSfxVolume(userSettings.sfxVolume ?? 80)
+    const startAudio = () => {
+      AudioManager.startBgm(isNight)
+      AudioManager.startAmbient(isNight)
+      window.removeEventListener('pointerdown', startAudio)
+    }
+    window.addEventListener('pointerdown', startAudio)
+    return () => window.removeEventListener('pointerdown', startAudio)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
+
+  // Wire EventBridge → Zustand + AudioManager SFX
   useEffect(() => {
     const cleanups = [
-      EventBridge.on('openJournal', () => openJournal()),
-      EventBridge.on('openBreathing', () => openBreathing()),
+      EventBridge.on('openJournal', () => { openJournal(); AudioManager.playSfx('open') }),
+      EventBridge.on('openBreathing', () => { openBreathing(); AudioManager.playSfx('open') }),
       EventBridge.on('nearbyInteractable', ({ id }) => setNearbyInteractable(id)),
-      EventBridge.on('talkNPC', ({ npcId, message }) => {
-        // Show NPC message as quest notification briefly
+      EventBridge.on('plantAdded', () => AudioManager.playSfx('chime')),
+      EventBridge.on('talkNPC', ({ message }) => {
         setQuestNotification(message)
         setTimeout(() => setQuestNotification(null), 5000)
       }),
@@ -70,6 +88,7 @@ export function GameCanvas() {
         if (!quest || quest.status === 'completed') return
         updateQuest(questKey, progress, completed ? 'completed' : 'active')
         if (completed) {
+          AudioManager.playSfx('chime')
           setQuestNotification(`Quest complete: ${questKey.replace(/_/g, ' ')}`)
           setTimeout(() => setQuestNotification(null), 3000)
         }

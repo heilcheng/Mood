@@ -12,6 +12,7 @@ export function MobileControls() {
     // Track active inputs to avoid spamming events if already held
     const activeDirs = useRef<Set<InputDirection>>(new Set())
     const interactHeld = useRef(false)
+    const dpadHeld = useRef(false)
 
     // Detect touch capability
     useEffect(() => {
@@ -39,7 +40,15 @@ export function MobileControls() {
     const handlePointerDpad = useCallback((e: PointerEvent) => {
         if (!dpadRef.current) return
         e.preventDefault() // prevent scrolling/default actions
-        if (e.type === 'pointermove' && e.buttons !== 1) return // only track if mouse button is down
+        if (e.type === 'pointermove') {
+            // Mouse needs button=1 to drag, but touch doesn't necessarily have button=1 on Safari
+            if (e.pointerType === 'mouse' && e.buttons !== 1) return
+            // For all pointerTypes, ensure we started the drag on the D-Pad
+            if (!dpadHeld.current) return
+        }
+        if (e.type === 'pointerdown') {
+            dpadHeld.current = true
+        }
 
         const rect = dpadRef.current.getBoundingClientRect()
         // Calculate which direction is primarily being pressed based on pointer coordinates relative to dpad center
@@ -77,6 +86,7 @@ export function MobileControls() {
 
     const handlePointerEndDpad = useCallback((e: PointerEvent) => {
         e.preventDefault()
+        dpadHeld.current = false
         for (const d of activeDirs.current) {
             dispatchKeyDir(d, false)
         }

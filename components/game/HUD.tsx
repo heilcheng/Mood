@@ -119,7 +119,7 @@ export function HUD() {
 
       {/* Bottom-right: quest tracker with progress */}
       {activeQuests.length > 0 && (
-        <div className="absolute top-4 right-16 md:bottom-4 md:right-4 md:top-auto z-10 w-40 md:w-auto">
+        <div className="hidden md:block absolute top-4 right-16 md:bottom-4 md:right-4 md:top-auto z-10 w-40 md:w-auto">
           <div className="bg-black/40 border border-white/20 rounded-2xl shadow-xl p-2 md:p-3 md:min-w-52 backdrop-blur-md">
             <p className="text-[10px] md:text-sm font-bold text-white/90 mb-1 md:mb-2 uppercase tracking-wide">Quests</p>
             <div className="flex flex-col gap-2">

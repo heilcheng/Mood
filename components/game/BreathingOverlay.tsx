@@ -109,7 +109,7 @@ function BreathingSphere({ phase, text, progress, color }: { phase: string, text
   const scale = isExpand ? 0.6 + (progress * 0.5) : phase.includes('exhale') ? 1.1 - (progress * 0.5) : isHoldIn ? 1.1 : 0.6
 
   return (
-    <div className="relative w-64 h-64 flex items-center justify-center mx-auto my-12">
+    <div className="relative w-48 h-48 md:w-64 md:h-64 flex items-center justify-center mx-auto my-8 md:my-12">
       {/* Outer ripples */}
       <div className="absolute inset-0 rounded-full border border-white/10" style={{ transform: `scale(${scale * 1.4})`, transition: 'transform 0.1s linear' }} />
       <div className="absolute inset-0 rounded-full border border-white/20" style={{ transform: `scale(${scale * 1.2})`, transition: 'transform 0.1s linear' }} />

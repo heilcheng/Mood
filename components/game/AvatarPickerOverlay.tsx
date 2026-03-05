@@ -44,42 +44,26 @@ const AVATARS: Array<{
     ]
 
 function PixelSprite({ src, size = 80, isCow = false }: { src: string; size?: number; isCow?: boolean }) {
-    if (isCow) {
-        return (
-            <img
-                src={src}
-                alt="Clovis"
-                style={{
-                    width: size,
-                    height: size,
-                    imageRendering: 'pixelated',
-                    objectFit: 'contain',
-                }}
-            />
-        )
-    }
-    // Human chars: clip to the first 32x32 frame (top-left) of their spritesheet
+    // Use CSS background-image to clip to exactly the first frame (top-left 32x32).
+    // background-size = size * cols  →  one column == exactly `size` px wide
+    // background-position: 0 0      →  top-left frame = front-facing idle
+    const cols = isCow ? 4 : 5   // cow: 128×160 (4 cols); human: 160×576 (5 cols)
     return (
         <div
             style={{
                 width: size,
                 height: size,
-                overflow: 'hidden',
                 flexShrink: 0,
+                backgroundImage: `url('${src}')`,
+                backgroundRepeat: 'no-repeat',
+                backgroundPosition: '0 0',
+                backgroundSize: `${size * cols}px auto`,
+                imageRendering: 'pixelated',
             }}
-        >
-            <img
-                src={src}
-                alt="character"
-                style={{
-                    width: size * 5,  // 5 cols in sheet → scale 1 col to 'size'
-                    imageRendering: 'pixelated',
-                    display: 'block',
-                }}
-            />
-        </div>
+        />
     )
 }
+
 
 export function AvatarPickerOverlay() {
     const { avatar, setAvatar, hasPickedAvatar, setHasPickedAvatar } = useGameStore()

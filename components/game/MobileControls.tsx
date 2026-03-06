@@ -5,7 +5,6 @@ import { useEffect, useState, useRef, useCallback } from 'react'
 type InputDirection = 'up' | 'down' | 'left' | 'right' | null
 
 export function MobileControls() {
-    const [isTouchDevice, setIsTouchDevice] = useState(false)
     // Fire event helpers
     const fireDir = useCallback((dir: InputDirection, isDown: boolean) => {
         window.dispatchEvent(new CustomEvent('mobile-input', { detail: { type: 'dir', dir, isDown } }))
@@ -21,8 +20,6 @@ export function MobileControls() {
         document.addEventListener('contextmenu', prevent)
         return () => document.removeEventListener('contextmenu', prevent)
     }, [])
-
-    if (!isTouchDevice) return null
 
     const btnBase = "absolute w-12 h-12 bg-black/30 backdrop-blur-md rounded-xl border border-white/20 shadow-xl flex items-center justify-center text-white/70 font-bold pointer-events-auto active:bg-white/30 active:scale-95 transition-all text-xl select-none touch-none"
 

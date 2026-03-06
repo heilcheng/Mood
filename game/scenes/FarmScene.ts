@@ -207,10 +207,10 @@ export class FarmScene extends Phaser.Scene {
   }
 
   private spawnCherryTreeReward(index: number, animate = false): void {
-    // Top border of garden is Y=20. Garden stretches from X=14 to X=28.
-    // Grow trees along the top fence X=21, expanding outwards logic.
-    const startX = 21
-    const startY = 19
+    // New Garden bounds are x=4, y=19, width=15, height=13.
+    // Center of top fence is roughly X=11. Put it just inside the fence at Y=20.
+    const startX = 11
+    const startY = 20
     // Math pattern: 0, 1, -1, 2, -2, 3, -3...
     const offset = Math.ceil(index / 2) * (index % 2 !== 0 ? 1 : -1)
     // If they write > 15 entries, stack them a row higher

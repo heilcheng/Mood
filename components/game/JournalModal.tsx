@@ -232,7 +232,7 @@ export function JournalModal() {
               <GlassButton variant="secondary" onClick={handleClose}>Close</GlassButton>
             </div>
           ) : (
-            <div className="space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-2">
+            <div className="space-y-3 md:space-y-5 animate-in fade-in slide-in-from-bottom-4 duration-500 pb-2">
               {/* Quest progress */}
               {(() => {
                 const weeklyQ = quests.find((q) => q.quest_key === 'weekly_reflection')
@@ -248,26 +248,26 @@ export function JournalModal() {
                 )
               })()}
 
-              <div className="text-center space-y-2 mb-4">
-                <h3 className="text-2xl font-serif text-white tracking-wide">A Moment of Reflection</h3>
-                <p className="text-white/70 text-sm">Thank you for pausing and checking in with yourself.</p>
+              <div className="text-center space-y-1 md:space-y-2 mb-2 md:mb-4">
+                <h3 className="text-xl md:text-2xl font-serif text-white tracking-wide">A Moment of Reflection</h3>
+                <p className="text-white/70 text-xs md:text-sm">Thank you for pausing and checking in with yourself.</p>
               </div>
 
               {/* Result card */}
-              <div className={`bg-gradient-to-br ${TONE_GRADIENTS[result.tone_color] || TONE_GRADIENTS.soft_blue} rounded-3xl p-8 border border-white/40 shadow-2xl relative overflow-hidden`}>
+              <div className={`bg-gradient-to-br ${TONE_GRADIENTS[result.tone_color] || TONE_GRADIENTS.soft_blue} rounded-3xl p-4 md:p-8 border border-white/40 shadow-2xl relative overflow-hidden`}>
                 <div className="absolute top-0 right-0 w-48 h-48 bg-white/20 rounded-full blur-3xl -mr-20 -mt-20 pointer-events-none" />
 
-                <div className="flex flex-col items-center gap-4 mb-6 relative z-10">
-                  <div className="w-16 h-16 bg-white/20 rounded-full flex items-center justify-center text-4xl shadow-inner border border-white/30 backdrop-blur-sm">
+                <div className="flex flex-col items-center gap-2 md:gap-4 mb-3 md:mb-6 relative z-10">
+                  <div className="w-12 h-12 md:w-16 md:h-16 bg-white/20 rounded-full flex items-center justify-center text-2xl md:text-4xl shadow-inner border border-white/30 backdrop-blur-sm">
                     {MOOD_EMOJI[result.mood]}
                   </div>
                   <div className="text-center">
-                    <p className="text-white font-serif text-2xl capitalize tracking-wide">{result.mood}</p>
+                    <p className="text-white font-serif text-xl md:text-2xl capitalize tracking-wide">{result.mood}</p>
                   </div>
                 </div>
 
-                <div className="bg-black/15 rounded-2xl p-6 relative z-10 border border-white/20 shadow-inner">
-                  <p className="text-white text-lg leading-relaxed font-medium text-center italic">
+                <div className="bg-black/15 rounded-2xl p-3 md:p-6 relative z-10 border border-white/20 shadow-inner">
+                  <p className="text-white text-sm md:text-lg leading-relaxed font-medium text-center italic">
                     "{result.short_reflection_prompt}"
                   </p>
                 </div>
@@ -286,12 +286,12 @@ export function JournalModal() {
                 </div>
               )}
 
-              <div className="bg-emerald-500/20 border border-emerald-400/40 rounded-2xl p-4 flex flex-col items-center justify-center text-center gap-2 shadow-inner mt-4">
-                <div className="w-10 h-10 rounded-full bg-emerald-400/40 flex items-center justify-center text-2xl shadow-sm">
+              <div className="bg-emerald-500/20 border border-emerald-400/40 rounded-2xl p-3 md:p-4 flex flex-col items-center justify-center text-center gap-1 md:gap-2 shadow-inner mt-2 md:mt-4">
+                <div className="w-8 h-8 md:w-10 md:h-10 rounded-full bg-emerald-400/40 flex items-center justify-center text-xl md:text-2xl shadow-sm">
                   🌱
                 </div>
                 <div>
-                  <p className="text-white font-semibold text-base mb-1">
+                  <p className="text-white font-semibold text-sm md:text-base mb-1">
                     Your Garden Grows
                   </p>
                   <p className="text-emerald-50 text-sm">

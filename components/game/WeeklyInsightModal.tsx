@@ -193,7 +193,7 @@ export function WeeklyInsightModal() {
           <p className="text-white/70 text-sm">Reflecting on your week...</p>
         </div>
       ) : summary ? (
-        <div className={`space-y-5 transition-all duration-700 ${revealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+        <div className={`space-y-3 md:space-y-5 transition-all duration-700 max-h-[70vh] md:max-h-none overflow-y-auto pr-1 md:pr-0 scrollbar-thin ${revealed ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
 
           {/* Streak & Entries header */}
           <div className="flex gap-2 md:gap-3">
@@ -242,7 +242,7 @@ export function WeeklyInsightModal() {
           )}
 
           {/* Summary narrative */}
-          <div className="bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-2xl p-5 border border-white/20 shadow-lg relative overflow-hidden">
+          <div className="bg-gradient-to-br from-indigo-500/20 to-purple-500/20 rounded-2xl p-3 md:p-5 border border-white/20 shadow-lg relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-16 -mt-16 pointer-events-none" />
             <p className="text-white/90 text-sm leading-relaxed font-medium relative z-10">
               &ldquo;{summary.summary}&rdquo;
@@ -251,7 +251,7 @@ export function WeeklyInsightModal() {
 
           {/* Highlights */}
           {summary.highlights.length > 0 && (
-            <div className="bg-white/5 border border-white/10 rounded-2xl p-4">
+            <div className="bg-white/5 border border-white/10 rounded-2xl p-3 md:p-4">
               <p className="text-white/50 text-[10px] uppercase tracking-widest mb-3">✨ What stood out this week</p>
               <ul className="space-y-2.5">
                 {summary.highlights.map((h, i) => (
@@ -265,7 +265,7 @@ export function WeeklyInsightModal() {
           )}
 
           {/* Focus for next week */}
-          <div className="bg-white/8 border border-white/15 rounded-2xl p-4">
+          <div className="bg-white/8 border border-white/15 rounded-2xl p-3 md:p-4">
             <p className="text-white/50 text-[10px] uppercase tracking-widest mb-2">🌱 Focus for next week</p>
             <p className="text-white/85 text-sm leading-relaxed">{summary.suggested_focus}</p>
           </div>
@@ -285,7 +285,7 @@ export function WeeklyInsightModal() {
             </div>
           )}
 
-          <GlassButton onClick={closeWeeklyInsight} className="w-full font-bold text-base py-3">
+          <GlassButton onClick={closeWeeklyInsight} className="w-full font-bold text-sm md:text-base py-2 md:py-3 shrink-0">
             Back to Farm 🌾
           </GlassButton>
         </div>
